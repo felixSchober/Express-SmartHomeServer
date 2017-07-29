@@ -106,8 +106,8 @@ router.get('/statistic/week/', function(req, res, next) {
 		if (err) res.send(err);
 		
 		const firstDayOfCurrentWeek = getFirstAndLastDayOfWeek().monday;
-		let numberOfEspressos = 0;
-		for (let i = espressoMachine.espressos.length - 1; i >= 0; i--) {
+		var numberOfEspressos = 0;
+		for (var i = espressoMachine.espressos.length - 1; i >= 0; i--) {
 			const espresso = espressoMachine.espressos[i];
 			if (espresso.created >= firstDayOfCurrentWeek) {
 				numberOfEspressos++;

@@ -16,6 +16,7 @@ var morgan = require('morgan');
 // Routes
 var index = require('./backend/routes/index');
 var espressoMachine = require('./backend/routes/espressoMachine');
+var hue = require('./backend/routes/hue');
 var database = require('./backend/database')
 
 // mongoose setup
@@ -57,6 +58,7 @@ app.use(function(err, req, res, next) {
 
 */
 app.use('/api/espresso', espressoMachine);
+app.use('/api/hue', hue);
 app.use('*', index);
 
 const server = http.createServer(app);
