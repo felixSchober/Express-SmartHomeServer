@@ -32,10 +32,11 @@
     "css-loader": "^0.23.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "html-loader": "^0.4.3",
-    "html-webpack-plugin": "^2.22.0"
+    "html-webpack-plugin": "^2.22.0",
+    "python-shell": "^0.4.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node backend/server.js",
     "build": "webpack --config webpack.config.js --progress --profile --colors --display-error-details --display-reasons --debug"
   },
   "devDependencies": {

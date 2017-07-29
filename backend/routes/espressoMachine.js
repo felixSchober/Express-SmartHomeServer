@@ -1,6 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var EspressoMachine = require('./../models/espresso')
+const express = require('express');
+const router = express.Router();
+const path = require('path');
+const EspressoMachine = require('./../models/espresso')
+const PythonShell = require('python-shell');
 
 
 /* GET espresso status.
@@ -22,15 +24,35 @@ router.post('/', function (req, res, next) {
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
+		const pythonScriptPath = path.resolve(__dirname, '..', 'python', 'espresso');
+		const pythonScriptOptions = {
+			mode: 'text',
+			scriptPath: pythonScriptPath,
+			args: []
+		};
+		var pythonShell = new PythonShell('__main__.py', pythonScriptOptions)
+		
+		pythonShell.on('message', function (message) {
+			console.log('[Espresso]:\t' + message)
+		});
+		
+		pythonShell.end(function (err) {
+			if (err) {
+				console.error('[Espresso]:\t' + err.stack)
+				callback(err.message, null);
+				return;
+			}
+			console.log('[Espresso]:\tPython terminated');
+		});
 		
 		// create espresso object for logging
 		espressoMachine.espressos.push({});
-		console.log('New Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
+		console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
 		espressoMachine.save(function (err) {
 			if (err) {
 				res.send(err);
 			} else {
-				console.log('Created espresso')
+				console.log('[Espresso]:\tCreated espresso object')
 				res.json(espressoMachine.espressos[espressoMachine.espressos.length - 1]);
 			}
 		})
@@ -38,16 +60,19 @@ router.post('/', function (req, res, next) {
 })
 
 
-/* POST New Espresso Machine
+/* POST Creates new Espresso Machine
  * /api/espresso/machine/
  */
 router.post('/machine/', function (req, res, next) {
+	
 	EspressoMachine.create({
 		name : 'Krupps Espresso',
 		isOn : false,
 		espressos: []
 	}, function (err, espressoMachine) {
 		if (err) res.send(err);
+		
+		console.log('[Espresso]:\tCreated new espresso machine');
 		res.json(espressoMachine);
 	})
 })
@@ -74,7 +99,7 @@ router.get('/statistic/total/', function(req, res, next) {
  * /api/espresso/statistic/total
  */
 router.get('/statistic/week/', function(req, res, next) {
-	console.log('Got /statistic/week/ request.');
+	console.log('Got /statistic/week/ request');
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
