@@ -1,28 +1,29 @@
-var express = require('express');
-var app = express();
-var port = process.env.PORT || 3000;
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
 
-var http = require('http');
-var path = require('path');
+const http = require('http');
+const path = require('path');
 
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var morgan = require('morgan');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
 
 // Routes
-var index = require('./backend/routes/index');
-var espressoMachine = require('./backend/routes/espressoMachine');
-var hue = require('./backend/routes/hue');
-var database = require('./backend/database')
+const index = require('./backend/routes/index');
+const espressoMachine = require('./backend/routes/espressoMachine');
+const hue = require('./backend/routes/hue');
+const harmony = require('./backend/routes/harmony');
+const database = require('./backend/database');
 
 // mongoose setup
 mongoose.connect(database.remoteUrl);
 
-var db = mongoose.connection;
+const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
 	console.log('Connection to mongoose successful.')
@@ -58,7 +59,8 @@ app.use(function(err, req, res, next) {
 
 */
 app.use('/api/espresso', espressoMachine);
-app.use('/api/hue', hue);
+app.use('/api/hue', hue)
+app.use('/api/harmony', harmony);
 app.use('*', index);
 
 const server = http.createServer(app);
