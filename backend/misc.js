@@ -26,11 +26,16 @@ const addDaysToDate = function(date, days) {
 	return result;
 }
 
-const performRequest = function (options, sender, debug) {
+const performRequest = function (options, sender, debug, parseJson) {
 	return new Promise(function (resolve, reject) {
 		
 		if (debug) {
-			console.log(sender + '\tREQUEST: ' + options.uri);
+			console.log(sender + '\t' + options.method + ' REQUEST: ' + options.uri);
+		}
+		
+		// default for parseJson is true
+		if (parseJson === undefined) {
+			parseJson = true;
 		}
 		
 		request(options, function (err, response, body) {
@@ -43,21 +48,23 @@ const performRequest = function (options, sender, debug) {
 			} else {
 				const res = {status: response.statusCode, data: undefined};
 				
-				if (body == null || body === "") {
+				if (response.statusCode !== 200 && (body == null || body === "")) {
 					console.error(sender + '\tPossible connection error (body was null or empty) for URI ' + options.uri);
 					reject(res);
 				} else {
 					// already parse data if response is 200
 					if (response.statusCode === 200) {
-						try {
-							res.data = JSON.parse(body);
-						}
-						catch (err) {
-							console.error(sender + '\tJSON could not parse body for URI ' + options.uri + '. An error occurred:\n' + err);
-							console.error(sender + '\t' + err.stack);
-							console.error(sender + '\tBody' + body);
-							
-							res.data = body;
+						if (parseJson) {
+							try {
+								res.data = JSON.parse(body);
+							}
+							catch (err) {
+								console.error(sender + '\tJSON could not parse body for URI ' + options.uri + '. An error occurred:\n' + err);
+								console.error(sender + '\t' + err.stack);
+								console.error(sender + '\tBody' + body);
+								
+								res.data = body;
+							}
 						}
 					} else {
 						console.error(sender + '\tPossible connection error (Status: ' + response.statusCode + ') for URI ' + options.uri);
@@ -89,12 +96,21 @@ const sortValueListAscending = function (list) {
 	});
 }
 
-const doOpenHabRequest = function(path) {
+const doOpenHabGetRequest = function(path) {
 	const options = {
 		uri: 'http://' + openHabConfig.url + ':' + openHabConfig.port + '/rest/' + path,
 		method: 'GET'
 	}
 	return performRequest(options, '[OPENHAB]', true);
+}
+
+const doOpenHabPostRequest = function(path, body) {
+	const options = {
+		uri: 'http://' + openHabConfig.url + ':' + openHabConfig.port + '/rest/' + path,
+		method: 'POST',
+		body: body
+	}
+	return performRequest(options, '[OPENHAB]', true, false);
 }
 
 
@@ -104,4 +120,5 @@ module.exports.addDaysToDate = addDaysToDate;
 module.exports.performRequest = performRequest;
 module.exports.sortValueListDescending = sortValueListDescending;
 module.exports.sortValueListAscending = sortValueListAscending;
-module.exports.doOpenHabRequest = doOpenHabRequest;
+module.exports.doOpenHabGetRequest = doOpenHabGetRequest;
+module.exports.doOpenHabPostRequest = doOpenHabPostRequest;
