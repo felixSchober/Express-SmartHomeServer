@@ -19,7 +19,7 @@ router.get('/', function(req, res, next) {
  */
 router.get('/activity/current/', function(req, res, next) {
 	console.log('GET current activity');
-	misc.doOpenHabRequest('items/HarmonyHub_CurrentActivity')
+	misc.doOpenHabGetRequest('items/HarmonyHub_CurrentActivity')
 	.then(function (result) {
 		
 		const isActivityRunning = (result.data.state !== 'PowerOff');
@@ -39,19 +39,33 @@ router.get('/activity/current/', function(req, res, next) {
  * /api/harmony/activity/start/
  */
 router.post('/activity/start/', function (req, res) {
-	if (req !== null && req.body !== null && req.body.device !== null) {
+	console.log(req.body.device);
+	if (req !== null && req.body !== null && req.body.device === null) {
 		res.status(400).send('The request was not formatted correctly.');
 		return;
 	}
 	
 	const device = req.body.device;
+	misc.doOpenHabPostRequest('items/HarmonyHub_CurrentActivity', device)
+	.then(function (result) {
+		res.status(200).send({success: true, result: result, device: device});
+	})
+	.catch(function (err) {
+		res.status(500).send({success: false, error: err, device: device});
+	});
 });
 
 /* POST end current activity (from OpenHab)
  * /api/harmony/activity/start/
  */
 router.post('/activity/stop/', function (req, res) {
-
+	misc.doOpenHabPostRequest('items/HarmonyHub_CurrentActivity', 'PowerOff')
+	.then(function (result) {
+		res.status(200).send({success: true, result: result});
+	})
+			.catch(function (err) {
+		res.status(500).send({success: false, error: err});
+	});
 });
 
 module.exports = router;
