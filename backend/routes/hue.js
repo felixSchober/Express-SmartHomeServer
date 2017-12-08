@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const http = require('http');
 const request = require('request');
+const misc = require('../misc');
 const hueConfig = require('./../config/hue')
 
 
@@ -15,6 +16,50 @@ router.get('/', function(req, res, next) {
 			function (data) {
 				res.setHeader('Content-Type', 'application/json');
 				res.send(data);
+			},
+			function (error) {
+				console.error('[Hue]:\tError / ' + error);
+			},
+			'hue')
+});
+
+/* GET all lights
+ * /api/hue/lights
+ */
+router.get('/lights', function(req, res, next) {
+	
+	doGetRequest('lights',
+			function (data) {
+				res.setHeader('Content-Type', 'application/json');
+				
+				const keys = Object.keys(data);
+				const lights = [];
+				const lights_on = [];
+				const lights_off = [];
+				
+				for (var i = 0; i < keys.length; i++) {
+					const key = keys[i];
+					console.log('[Hue]:\tLight ID ' + key);
+					
+					const light = {
+						id: key,
+						stateOn: data[key].state.on,
+						bri: data[key].state.bri,
+						name: data[key].name
+					};
+					
+					if (light.stateOn) lights_on.push(light);
+					else lights_off.push(light);
+					lights.push(light);
+				}
+				
+				const result = {
+					count: lights.length,
+					lightsOn: lights_on.length,
+					lightsOff: lights_off.length,
+					lights: lights
+				}
+				res.send(result);
 			},
 			function (error) {
 				console.error('[Hue]:\tError / ' + error);
@@ -100,19 +145,11 @@ router.get('/motion/entrance/temperature/plain/', function(req, res, next) {
 
 function doGetRequest(path, callback, error, name) {
 	const options = {
-		host: hueConfig.hueIp,
-		port: 80,
-		path: '/api/' + hueConfig.hueUser + '/' + path,
+		uri: 'http://' + hueConfig.hueIp + ':80/api/' + hueConfig.hueUser + '/' + path,
 		method: 'GET'
 	};
-	
-	request('http://' + options.host + options.path, function (err, response, body) {
-		if (err) error(err);
-		if (response.statusCode !== 200) error(body);
-		
-		// from within the callback, write data to response, essentially returning it.
-		callback(body);
-		
+	misc.performRequest(options, 'Hue', true, true).then((result) => {
+		callback(result.data);
 	});
 }
 
