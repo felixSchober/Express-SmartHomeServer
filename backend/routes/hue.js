@@ -74,12 +74,10 @@ router.get('/motion/kitchen/temperature/', function(req, res, next) {
 	
 	doGetRequest('sensors/' + hueConfig.motionSensorTempKitchenId,
 			function (data) {
-				data = JSON.parse(data);
-				
 				const temperature = data.state.temperature / 100;
 				const response = {temperature: temperature, lastupdated: data.state.lastupdated};
 				//res.setHeader('Content-Type', 'application/json');
-				res.json(response);
+				res.send(response);
 			},
 			function (error) {
 				console.error('[Hue]:\tError / ' + error);
@@ -94,8 +92,6 @@ router.get('/motion/entrance/temperature/', function(req, res, next) {
 	
 	doGetRequest('sensors/' + hueConfig.motionSensorTempEntranceId,
 			function (data) {
-				data = JSON.parse(data);
-				
 				const temperature = data.state.temperature / 100;
 				const response = {temperature: temperature, lastupdated: data.state.lastupdated};
 				//res.setHeader('Content-Type', 'application/json');
@@ -114,7 +110,6 @@ router.get('/motion/kitchen/temperature/plain/', function(req, res, next) {
 	
 	doGetRequest('sensors/' + hueConfig.motionSensorTempKitchenId,
 			function (data) {
-				data = JSON.parse(data);
 				const temperature = '' + data.state.temperature / 100;
 				res.send(temperature);
 			},
@@ -131,8 +126,6 @@ router.get('/motion/entrance/temperature/plain/', function(req, res, next) {
 	
 	doGetRequest('sensors/' + hueConfig.motionSensorTempEntranceId,
 			function (data) {
-				data = JSON.parse(data);
-				
 				const temperature = '' + data.state.temperature / 100;
 				res.send(temperature);
 			},
