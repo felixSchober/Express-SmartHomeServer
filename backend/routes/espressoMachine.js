@@ -12,7 +12,10 @@ router.get('/', function(req, res, next) {
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
-		if (err) res.send(err);
+		if (err) {
+			res.send(err);
+			return;
+		}
 		
 		res.json(espressoMachine);
 	});
