@@ -18,6 +18,7 @@ const index = require('./backend/routes/index');
 const espressoMachine = require('./backend/routes/espressoMachine');
 const hue = require('./backend/routes/hue');
 const harmony = require('./backend/routes/harmony');
+const hs110 = require('./backend/routes/hs110Plugs');
 const database = require('./backend/database');
 
 // mongoose setup
@@ -61,6 +62,7 @@ app.use(function(err, req, res, next) {
 app.use('/api/espresso', espressoMachine);
 app.use('/api/hue', hue)
 app.use('/api/harmony', harmony);
+app.use('/api/hs110', hs110);
 app.use('*', index);
 
 const server = http.createServer(app);
@@ -68,6 +70,6 @@ const server = http.createServer(app);
 
 server.listen(port, function () {
 	console.log('HTTP server listening at http://%s:%s', '127.0.0.1', port);
-})
+});
 
 module.exports = app;
