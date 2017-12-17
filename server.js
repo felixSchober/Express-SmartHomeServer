@@ -5,13 +5,14 @@ const port = process.env.PORT || 3000;
 const http = require('http');
 const path = require('path');
 
-const mongoose = require('mongoose');
 
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
+
+const agenda = require('./backend/recurringUpdates');
 
 // Routes
 const index = require('./backend/routes/index');
@@ -23,13 +24,8 @@ const calendar = require('./backend/routes/calendar');
 const database = require('./backend/database');
 
 // mongoose setup
-mongoose.connect(database.remoteUrl);
+database.connect(database.remoteUrl);
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
-	console.log('Connection to mongoose successful.')
-});
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
