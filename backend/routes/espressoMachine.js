@@ -8,7 +8,7 @@ const hs110Plugs = require('./hs110Plugs');
 const schedule = require('node-schedule');
 
 
-let lastEspressoTime = moment();
+let lastEspressoTime = moment().subtract(10, 'years');
 const espressoPlugName = 'Espresso';
 const espressoPowerThreshold = 1;
 
@@ -138,7 +138,7 @@ const checkIfNewEspressoHasBeenCreated = function () {
 	// do not create new espresso if last one has been created only 5 minutes ago
 	const now = moment();
 	const timeDiff = now.diff(lastEspressoTime, 'minutes');
-	if (timeDiff < 5) return;
+	if (timeDiff < 6) return;
 	
 	// check current power state
 	hs110Plugs.getPowerForPlug(espressoPlugName, false, true).then((power) => {

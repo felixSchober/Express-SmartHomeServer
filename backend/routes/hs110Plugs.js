@@ -204,7 +204,7 @@ function updatePowerStateAndSaveToDb() {
 
 const updatePlugState = function (plugName, stateOn) {
 	return new Promise(function (resolve, reject) {
-		client.getDevice({host: plugs[req.params.plugName]})
+		client.getDevice({host: plugs[plugName]})
 		.then((device)=>{
 			device.setPowerState(stateOn);
 			resolve({stateOn: stateOn});
