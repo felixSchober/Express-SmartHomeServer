@@ -3,7 +3,14 @@ const router = express.Router();
 const path = require('path');
 const EspressoMachine = require('./../models/espresso')
 const PythonShell = require('python-shell');
+const moment = require('moment');
+const hs110Plugs = require('./hs110Plugs');
+const schedule = require('node-schedule');
 
+
+let lastEspressoTime = moment();
+const espressoPlugName = 'Espresso';
+const espressoPowerThreshold = 1;
 
 /* GET espresso status.
  * /api/espresso/
@@ -60,8 +67,7 @@ router.post('/', function (req, res, next) {
 			}
 		})
 	});
-})
-
+});
 
 /* POST Creates new Espresso Machine
  * /api/espresso/machine/
@@ -128,6 +134,54 @@ router.get('/statistic/week/', function(req, res, next) {
 	});
 });
 
+const checkIfNewEspressoHasBeenCreated = function () {
+	// do not create new espresso if last one has been created only 5 minutes ago
+	const now = moment();
+	const timeDiff = now.diff(lastEspressoTime, 'minutes');
+	if (timeDiff < 5) return;
+	
+	// check current power state
+	hs110Plugs.getPowerForPlug(espressoPlugName, false, true).then((power) => {
+		if (power > espressoPowerThreshold) {
+			console.log('[Espresso]:\tDetected new Espresso. Current Power: ' + power);
+			
+			// Save to DB
+			// get the espresso object from mongoose
+			EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
+				
+				
+				// create espresso object for logging
+				espressoMachine.espressos.push({});
+				console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
+				espressoMachine.save(function (err) {
+					if (err) {
+						console.error('[Espresso]:\tCould not create espresso object ' + err);
+					} else {
+						console.log('[Espresso]:\tCreated espresso object');
+						lastEspressoTime = moment();
+					}
+				})
+			});
+			
+			// schedule turn off in latest 5 minutes
+			let now = moment();
+			const turnOffDate = now.add(5, 'minutes').toDate();
+			const job = schedule.scheduleJob(turnOffDate, turnMachineOffAgain);
+			console.log('[Espresso]:\tCreated job to turn off machine in ' + moment(turnOffDate).fromNow());
+			
+		}
+	})
+}
+
+const turnMachineOffAgain = function () {
+	hs110Plugs.updatePlugState(espressoPlugName, false).then(function (result) {
+		console.log('[Espresso]:\tMachine was turned off' + result);
+	}).catch(function (err) {
+		console.error('[Espresso]:\tCould not turn off espresso' + err);
+	});
+}
+
+
 function getFirstAndLastDayOfWeek() {
 	var today, todayNumber, mondayNumber, sundayNumber, monday, sunday;
 	today = new Date();
@@ -141,3 +195,4 @@ function getFirstAndLastDayOfWeek() {
 }
 
 module.exports = router;
+module.exports.checkIfNewEspressoHasBeenCreated = checkIfNewEspressoHasBeenCreated;

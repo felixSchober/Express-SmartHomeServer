@@ -20,7 +20,9 @@
     "babel-preset-es2015": "^6.9.0",
     "python-shell": "^0.4.0",
     "request": "^2.81.0",
-    "tplink-smarthome-api": "^0.20.1"
+    "tplink-smarthome-api": "^0.20.1",
+    "node-schedule": "^1.2.5",
+    "moment": "^2.19.4"
   },
   "scripts": {
     "start": "node server.js",
