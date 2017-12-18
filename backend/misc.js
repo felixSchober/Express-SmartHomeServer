@@ -43,7 +43,7 @@ const performRequest = function (options, sender, debug, parseJson) {
 				console.error(sender + '\tConnection error for URI (err)' + options.uri + ':\n' + err);
 				reject(err);
 			} else if (response == null) {
-				console.error(sender + '\tPossible connection error for URI (response was null)' + options.uri);
+				console.error(sender + '\tPossible connection error for URI (response was null) ' + options.uri);
 				reject('response was null');
 			} else {
 				const res = {status: response.statusCode, data: undefined};
