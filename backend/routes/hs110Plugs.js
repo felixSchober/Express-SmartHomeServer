@@ -47,7 +47,7 @@ router.get('/plugs/', function(req, res, next) {
 
 router.get('/plugs/powerState', function(req, res, next) {
 	let currentPower = 0.0;
-	for (var i = 0; lastPowerStateBuffer.powerStates.length; i++) {
+	for (var i = 0; i < lastPowerStateBuffer.powerStates.length; i++) {
 		currentPower += lastPowerStateBuffer.powerStates[i];
 	}
 	
@@ -193,7 +193,7 @@ function updatePowerStateAndSaveToDb() {
 				lastPowerStateBuffer.powerHistories[currentPlug.plugName].shift()
 			}
 		}
-		console.log('[Plugs - Agenda]:\tPower State update complete')
+		console.log('[Plugs]:\tPower State update complete')
 		return;
 	})
 	.catch(function (err) {
