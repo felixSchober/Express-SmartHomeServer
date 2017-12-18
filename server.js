@@ -21,7 +21,7 @@ const hue = require('./backend/routes/hue');
 const harmony = require('./backend/routes/harmony');
 const hs110 = require('./backend/routes/hs110Plugs');
 const calendar = require('./backend/routes/calendar');
-const database = require('./backend/database');
+const database = require('./backend/config/database');
 
 // mongoose setup
 database.connect(database.remoteUrl);

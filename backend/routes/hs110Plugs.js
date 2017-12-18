@@ -9,6 +9,9 @@ const energyModel = require('./../models/energy');
 
 const client = new Client();
 
+const energyHistoryUpdateEveryXSeconds = 10;
+const energyHistoryEntriesPerHour = 60 * 60 / energyHistoryUpdateEveryXSeconds;
+
 const plugs = {
 	'Espresso': '192.168.178.62',
 	'hosts': ['192.168.178.62'],
@@ -19,7 +22,7 @@ const lastPowerStateBuffer = {
 	'flushCounter': 0,
 	'powerStates': [0],
 	'powerHistories': {
-		'Espresso': [],
+		'Espresso': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 	}
 }
 
@@ -189,7 +192,7 @@ function updatePowerStateAndSaveToDb() {
 			lastPowerStateBuffer.powerHistories[currentPlug.plugName].push(currentPlug.response.power);
 			
 			// if the list becomes to long remove the front of the list
-			if (lastPowerStateBuffer.powerHistories[currentPlug.plugName].length > 360) {
+			if (lastPowerStateBuffer.powerHistories[currentPlug.plugName].length > energyHistoryEntriesPerHour) {
 				lastPowerStateBuffer.powerHistories[currentPlug.plugName].shift()
 			}
 		}
@@ -274,3 +277,5 @@ module.exports = router;
 module.exports.updatePowerStateAndSaveToDb = updatePowerStateAndSaveToDb;
 module.exports.getPowerForPlug = getPowerForPlug;
 module.exports.updatePlugState = updatePlugState;
+module.exports.energyHistoryEntriesPerHour = energyHistoryEntriesPerHour;
+module.exports.energyHistoryUpdateEveryXSeconds = energyHistoryUpdateEveryXSeconds;
