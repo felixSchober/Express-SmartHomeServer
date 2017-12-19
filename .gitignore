@@ -61,4 +61,4 @@ typings/
 .dist/
 .bin/
 
-backend/database.js
+backend/config/database.js
