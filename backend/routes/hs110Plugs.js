@@ -14,15 +14,21 @@ const energyHistoryEntriesPerHour = 60 * 60 / energyHistoryUpdateEveryXSeconds;
 
 const plugs = {
 	'Espresso': '192.168.178.62',
-	'hosts': ['192.168.178.62'],
-	'plugs': ['Espresso'],
+	'Media': '192.168.178.66',
+	'Kitchen': '192.168.178.65',
+	'Computer': '192.168.178.64',
+	'hosts': ['192.168.178.62', '192.168.178.66', '192.168.178.65', '192.168.178.64'],
+	'plugs': ['Espresso', 'Media', 'Kitchen', 'Computer'],
 };
 
 const lastPowerStateBuffer = {
 	'flushCounter': 0,
-	'powerStates': [0],
+	'powerStates': [0, 0, 0, 0],
 	'powerHistories': {
 		'Espresso': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
+		'Media': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
+		'Kitchen': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
+		'Computer': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 	}
 }
 
