@@ -250,20 +250,21 @@ const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 					// log the current level into the database
 					energyModel.getPlugEnergyHistory(plugName, function (err, plugDbDocument) {
 						if (err) {
+							console.error('[Plugs]:\t42 - DB Connection not successful: Error ' + err);
 							reject({error: err, device: plugs[plugName], state: response});
+						} else {
+							console.log('[Plugs]:\tFound plug db entry for ' + plugDbDocument.name);
+							plugDbDocument.energyLog.push(response);
+							plugDbDocument.save(function (err) {
+								if (err) {
+									console.error('[Plugs]:\t5 - Error: ' + err);
+									reject({error: err, device: plugs[plugName], state: response});
+								} else {
+									console.log('[Plugs]:\tCreated power state log');
+									resolve({plugName: plugName, response: response});
+								}
+							});
 						}
-						
-						console.log('[Plugs]:\tFound plug db entry.');
-						plugDbDocument.energyLog.push(response);
-						plugDbDocument.save(function (err) {
-							if (err) {
-								console.error('[Plugs]:\t5 - Error: ' + err);
-								reject({error: err, device: plugs[plugName], state: response});
-							} else {
-								console.log('[Plugs]:\tCreated power state log');
-								resolve({plugName: plugName, response: response});
-							}
-						});
 					});
 				} else {
 					resolve({plugName: plugName, response: response});

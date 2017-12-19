@@ -148,19 +148,21 @@ const checkIfNewEspressoHasBeenCreated = function () {
 			// Save to DB
 			// get the espresso object from mongoose
 			EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
-				
-				
-				// create espresso object for logging
-				espressoMachine.espressos.push({});
-				console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
-				espressoMachine.save(function (err) {
-					if (err) {
-						console.error('[Espresso]:\tCould not create espresso object ' + err);
-					} else {
-						console.log('[Espresso]:\tCreated espresso object');
-						lastEspressoTime = moment();
-					}
-				})
+				if (err) {
+					console.error('[Espresso]:\tCould connect to DB ' + err);
+				} else {
+					// create espresso object for logging
+					espressoMachine.espressos.push({});
+					console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
+					espressoMachine.save(function (err) {
+						if (err) {
+							console.error('[Espresso]:\tCould not create espresso object ' + err);
+						} else {
+							console.log('[Espresso]:\tCreated espresso object');
+							lastEspressoTime = moment();
+						}
+					});
+				}
 			});
 			
 			// schedule turn off in latest 5 minutes
