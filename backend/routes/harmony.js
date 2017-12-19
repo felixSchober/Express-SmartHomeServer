@@ -18,6 +18,23 @@ const channelNumberMapping = {
 	'NTV': [9],
 	'N24': [1, 0],
 	'ZDFINFO': [1, 1],
+	'ZDFNEO': [1, 8],
+	'KABEL1DOKU': [1, 3],
+	'RTLNITRO': [3, 4],
+	'TELE5': [1, 2],
+	'SIXX': [1, 1],
+	'ARTE': [1, 6],
+	'CNN': [1, 7],
+	'EUROSPORT': [1, 4],
+	'SAT1GOLD': [2, 2],
+	'3SAT': [5, 6],
+	'BR': [4, 6],
+	'SPORT1': [2, 0],
+	'EINSPLUS': [1, 1],
+	'SWR': [6, 7],
+	'TAGESSCHAU24': [1, 5],
+	'PRO7MAX': [2, 3],
+	'WDW': [3, 7]
 }
 
 /* GET welcome message
@@ -99,7 +116,7 @@ router.post('/tv/channel/:channelName', function (req, res) {
 		// channel number is > 9
 		if (channelNumberList.length > 1) {
 			let currentNumber = channelNumberList[1];
-			misc.doOpenHabPostRequest('items/' + openHabConfig.harmonyDeviceButtonPressItems['tv'], currentNumber)
+			misc.doOpenHabPostRequest('items/' + openHabConfig.harmonyDeviceButtonPressItems['tv'], '' + currentNumber)
 			.then(function (result2) {
 				res.status(200).send({success: true, result: result2});
 			})
