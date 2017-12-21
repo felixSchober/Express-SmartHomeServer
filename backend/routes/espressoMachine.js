@@ -15,57 +15,17 @@ const espressoPowerThreshold = 1;
 /* GET espresso status.
  * /api/espresso/
  */
-router.get('/', function(req, res, next) {
+router.get('/machine', function(req, res, next) {
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
 		if (err) {
-			res.send(err);
+			console.error('[Espresso]:\trouter.get(\'/machine\', function(req, res, next) - Error: ' + err);
+			res.status(500).send(err);
 			return;
 		}
 		
-		res.json(espressoMachine);
-	});
-});
-/* POST New Espresso
- * /api/espresso/
- */
-router.post('/', function (req, res, next) {
-	
-	// get the espresso object from mongoose
-	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
-		const pythonScriptPath = path.resolve(__dirname, '..', 'python', 'espresso');
-		const pythonScriptOptions = {
-			mode: 'text',
-			scriptPath: pythonScriptPath,
-			args: []
-		};
-		var pythonShell = new PythonShell('__main__.py', pythonScriptOptions)
-		
-		pythonShell.on('message', function (message) {
-			console.log('[Espresso]:\t' + message)
-		});
-		
-		pythonShell.end(function (err) {
-			if (err) {
-				console.error('[Espresso]:\t' + err.stack)
-				callback(err.message, null);
-				return;
-			}
-			console.log('[Espresso]:\tPython terminated');
-		});
-		
-		// create espresso object for logging
-		espressoMachine.espressos.push({});
-		console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
-		espressoMachine.save(function (err) {
-			if (err) {
-				res.send(err);
-			} else {
-				console.log('[Espresso]:\tCreated espresso object')
-				res.json(espressoMachine.espressos[espressoMachine.espressos.length - 1]);
-			}
-		})
+		res.send(espressoMachine);
 	});
 });
 
@@ -79,7 +39,11 @@ router.post('/machine/', function (req, res, next) {
 		isOn : false,
 		espressos: []
 	}, function (err, espressoMachine) {
-		if (err) res.send(err);
+		if (err) {
+			console.error('[Espresso]:\trouter.post(\'/machine\', function(req, res, next) - Error: ' + err);
+			res.status(500).send(err);
+			return;
+		}
 		
 		console.log('[Espresso]:\tCreated new espresso machine');
 		res.json(espressoMachine);
@@ -93,7 +57,11 @@ router.get('/statistic/total/', function(req, res, next) {
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
-		if (err) res.send(err);
+		if (err) {
+			console.error('[Espresso]:\trouter.get(\'/statistic/total/\', function(req, res, next) - Error: ' + err);
+			res.status(500).send(err);
+			return;
+		}
 		
 		const numberOfEspressos = espressoMachine.espressos.length;
 		const response = {
@@ -108,15 +76,18 @@ router.get('/statistic/total/', function(req, res, next) {
  * /api/espresso/statistic/total
  */
 router.get('/statistic/week/', function(req, res, next) {
-	console.log('Got /statistic/week/ request');
 	
 	// get the espresso object from mongoose
 	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
-		if (err) res.send(err);
+		if (err) {
+			console.error('[Espresso]:\trouter.get(\'/statistic/week/\', function(req, res, next) - Error: ' + err);
+			res.status(500).send(err);
+			return;
+		}
 		
 		const firstDayOfCurrentWeek = getFirstAndLastDayOfWeek().monday;
-		var numberOfEspressos = 0;
-		for (var i = espressoMachine.espressos.length - 1; i >= 0; i--) {
+		let numberOfEspressos = 0;
+		for (let i = espressoMachine.espressos.length - 1; i >= 0; i--) {
 			const espresso = espressoMachine.espressos[i];
 			if (espresso.created >= firstDayOfCurrentWeek) {
 				numberOfEspressos++;
@@ -130,7 +101,7 @@ router.get('/statistic/week/', function(req, res, next) {
 			since: firstDayOfCurrentWeek,
 			value: numberOfEspressos
 		}
-		res.json(response);
+		res.send(response);
 	});
 });
 
@@ -149,14 +120,14 @@ const checkIfNewEspressoHasBeenCreated = function () {
 			// get the espresso object from mongoose
 			EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
 				if (err) {
-					console.error('[Espresso]:\tCould connect to DB ' + err);
+					console.error('[Espresso]:\tcheckIfNewEspressoHasBeenCreated - Could connect to DB. Error: ' + err);
 				} else {
 					// create espresso object for logging
 					espressoMachine.espressos.push({});
 					console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
 					espressoMachine.save(function (err) {
 						if (err) {
-							console.error('[Espresso]:\tCould not create espresso object ' + err);
+							console.error('[Espresso]:\tcheckIfNewEspressoHasBeenCreated - Could not create espresso object. Error: ' + err);
 						} else {
 							console.log('[Espresso]:\tCreated espresso object');
 							lastEspressoTime = moment();
@@ -179,7 +150,7 @@ const turnMachineOffAgain = function () {
 	hs110Plugs.updatePlugState(espressoPlugName, false).then(function (result) {
 		console.log('[Espresso]:\tMachine was turned off' + result);
 	}).catch(function (err) {
-		console.error('[Espresso]:\tCould not turn off espresso' + err);
+		console.error('[Espresso]:\tturnMachineOffAgain - Could not turn off espresso. Error: ' + err);
 	});
 }
 

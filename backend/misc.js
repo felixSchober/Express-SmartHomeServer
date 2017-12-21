@@ -40,16 +40,16 @@ const performRequest = function (options, sender, debug, parseJson) {
 		
 		request(options, function (err, response, body) {
 			if (err) {
-				console.error(sender + '\tConnection error for URI (err)' + options.uri + ':\n' + err);
+				console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Error while connecting to URI. Error: ' + err);
 				reject(err);
 			} else if (response == null) {
-				console.error(sender + '\tPossible connection error for URI (response was null) ' + options.uri);
+				console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Possible connection error. Response was null.');
 				reject('response was null');
 			} else {
 				const res = {status: response.statusCode, data: undefined};
 				
 				if (response.statusCode !== 200 && (body == null || body === "")) {
-					console.error(sender + '\tPossible connection error (body was null or empty) for URI ' + options.uri);
+					console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Possible connection error. Body was empty but status is 200 OK');
 					reject(res);
 				} else {
 					// already parse data if response is 200
@@ -59,15 +59,16 @@ const performRequest = function (options, sender, debug, parseJson) {
 								res.data = JSON.parse(body);
 							}
 							catch (err) {
-								console.error(sender + '\tJSON could not parse body for URI ' + options.uri + '. An error occurred:\n' + err);
-								console.error(sender + '\t' + err.stack);
-								console.error(sender + '\tBody' + body);
+								console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - JSON could not parse body although status is 200 OK and parseJSON is ' + parseJson + '\n More details: \n');
+								console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - ERROR: ' + err);
+								console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - STACK:' + err.stack);
+								console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Response BODY' + body);
 								
 								res.data = body;
 							}
 						}
 					} else {
-						console.error(sender + '\tPossible connection error (Status: ' + response.statusCode + ') for URI ' + options.uri);
+						console.error('[' + sender + ']:\tperformRequest(' + options.uri + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Possible connection error. Status is not 200 OK. STATUS: ' + response.statusCode);
 						res.data = body
 					}
 					
