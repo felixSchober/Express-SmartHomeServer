@@ -41,7 +41,6 @@ const channelNumberMapping = {
  * /api/harmony/
  */
 router.get('/', function(req, res, next) {
-	
 	res.send('Harmony REST Api');
 });
 
@@ -62,6 +61,7 @@ router.get('/activity/current/', function(req, res, next) {
 		res.send(response);
 	})
 	.catch(function (err) {
+		console.error('[HARMONY]:\trouter.get(\'/activity/current/\', function(req, res, next) - Error while performing request. Error: ' + err);
 		res.status(500).send('Error while performing request.' + err);
 	});
 });
@@ -72,7 +72,8 @@ router.get('/activity/current/', function(req, res, next) {
 router.post('/activity/start/', function (req, res) {
 	console.log(req.body.device);
 	if (req !== null && req.body !== null && req.body.device === null) {
-		res.status(400).send('The request was not formatted correctly.');
+		console.error('[HARMONY]:\trouter.get(\'/activity/current/\', function(req, res, next) - The request was not formatted correctly.');
+		res.status(400).send({error: 'The request was not formatted correctly.'});
 		return;
 	}
 	
@@ -82,6 +83,7 @@ router.post('/activity/start/', function (req, res) {
 		res.status(200).send({success: true, result: result, device: device});
 	})
 	.catch(function (err) {
+		console.error('[HARMONY]:\trouter.get(\'/activity/start/\', function(req, res, next) - Error while performing request. Error: ' + err);
 		res.status(500).send({success: false, error: err, device: device});
 	});
 });
@@ -94,7 +96,8 @@ router.post('/activity/stop/', function (req, res) {
 	.then(function (result) {
 		res.status(200).send({success: true, result: result});
 	})
-			.catch(function (err) {
+	.catch(function (err) {
+		console.error('[HARMONY]:\trouter.get(\'/activity/stop/\', function(req, res, next) - Error while performing request. Error: ' + err);
 		res.status(500).send({success: false, error: err});
 	});
 });
@@ -121,6 +124,7 @@ router.post('/tv/channel/:channelName', function (req, res) {
 				res.status(200).send({success: true, result: result2});
 			})
 			.catch(function (err) {
+				console.error('[HARMONY]:\trouter.post(\'/tv/channel/:channelName/\', function(req, res, next) - Could not send second channel command. Error: ' + err);
 				res.status(500).send({success: false, error: err, message: 'Could not send second channel command'});
 			});
 		} else {
@@ -128,6 +132,7 @@ router.post('/tv/channel/:channelName', function (req, res) {
 		}
 	})
 	.catch(function (err) {
+		console.error('[HARMONY]:\trouter.post(\'/tv/channel/:channelName/\', function(req, res, next) - Could not send first channel command. Error: ' + err);
 		res.status(500).send({success: false, error: err, message: 'Could not send first channel command'});
 	});
 });
