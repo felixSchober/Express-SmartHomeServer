@@ -10,140 +10,117 @@ const hueConfig = require('./../config/hue')
 /* GET all sensors
  * /api/hue/
  */
-router.get('/', function(req, res, next) {
+router.get('/sensors', function(req, res, next) {
 	
-	doGetRequest('sensors',
-			function (data) {
-				res.setHeader('Content-Type', 'application/json');
-				res.send(data);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
+	doHueGetRequest('sensors')
+	.then((result) => {
+		res.status(200).send(result.data);
+	})
+	.catch((err) => {
+		console.error('[Hue]:\trouter.get(\'/sensors\', function(req, res, next) - Error: ' + err);
+		res.status(500).send(err);
+	});
 });
 
 /* GET all lights
  * /api/hue/lights
  */
 router.get('/lights', function(req, res, next) {
-	
-	doGetRequest('lights',
-			function (data) {
-				res.setHeader('Content-Type', 'application/json');
-				
-				const keys = Object.keys(data);
-				const lights = [];
-				const lights_on = [];
-				const lights_off = [];
-				
-				for (var i = 0; i < keys.length; i++) {
-					const key = keys[i];
-					console.log('[Hue]:\tLight ID ' + key);
-					
-					const light = {
-						id: key,
-						stateOn: data[key].state.on,
-						bri: data[key].state.bri,
-						name: data[key].name
-					};
-					
-					if (light.stateOn) lights_on.push(light);
-					else lights_off.push(light);
-					lights.push(light);
-				}
-				
-				const result = {
-					count: lights.length,
-					lightsOn: lights_on.length,
-					lightsOff: lights_off.length,
-					lights: lights
-				}
-				res.send(result);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
+	getLights()
+	.then((lights) => {
+		res.status(200).send(lights);
+	})
+	.catch((err) => {
+		console.error('[Hue]:\trouter.get(\'/lights\', function(req, res, next) - Error: ' + err);
+		res.status(500).send(err);
+	});
 });
 
-/* GET motionSensor Kitchen
+/* GET motionSensor temperature data
  * /api/hue/motion/kitchen/
  */
-router.get('/motion/kitchen/temperature/', function(req, res, next) {
-	
-	doGetRequest('sensors/' + hueConfig.motionSensorTempKitchenId,
-			function (data) {
-				const temperature = data.state.temperature / 100;
-				const response = {temperature: temperature, lastupdated: data.state.lastupdated};
-				//res.setHeader('Content-Type', 'application/json');
-				res.send(response);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
+router.get('/sensors/:motionSensorName/temperature/', function(req, res, next) {
+	const motionSensorName = req.params.motionSensorName;
+	if (motionSensorName === null
+			|| motionSensorName === undefined
+			|| motionSensorName === ''
+			|| hueConfig.hueMotionSensorNameIdMapping[motionSensorName] === null
+			|| hueConfig.hueMotionSensorNameIdMapping[motionSensorName] === undefined) {
+		console.error('[Hue]:\trouter.get(\'/sensors/:motionSensorName/temperature/\', function(req, res, next) - Error: motionSensorName is not set correctly.' + motionSensorName);
+		res.status(400).send({error: 'Param motionSensorName is not set correctly.'});
+	} else {
+		const sensorId = hueConfig.hueMotionSensorNameIdMapping[motionSensorName];
+		const path = 'sensors/' + sensorId
+		
+		doHueGetRequest(path)
+		.then((result) => {
+			const data = result.data;
+			const temperature = data.state.temperature / 100;
+			const response = {temperature: temperature, lastUpdated: data.state.lastupdated};
+
+			res.send(response);
+		})
+		.catch((err) => {
+			console.error('[Hue]:\trouter.get(\'/sensors/:motionSensorName/temperature/\', function(req, res, next) - Error: ' + err);
+			res.status(500).send(err);
+		});
+	}
 });
 
-/* GET motionSensor Entrance
- * /api/hue/motion/kitchen/temperature
- */
-router.get('/motion/entrance/temperature/', function(req, res, next) {
-	
-	doGetRequest('sensors/' + hueConfig.motionSensorTempEntranceId,
-			function (data) {
-				const temperature = data.state.temperature / 100;
-				const response = {temperature: temperature, lastupdated: data.state.lastupdated};
-				//res.setHeader('Content-Type', 'application/json');
-				res.json(response);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
-});
-
-/* GET motionSensor Kitchen
- * /api/hue/motion/kitchen/plain
- */
-router.get('/motion/kitchen/temperature/plain/', function(req, res, next) {
-	
-	doGetRequest('sensors/' + hueConfig.motionSensorTempKitchenId,
-			function (data) {
-				const temperature = '' + data.state.temperature / 100;
-				res.send(temperature);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
-});
-
-/* GET motionSensor Entrance
- * /api/hue/motion/entrance/temperature/plain
- */
-router.get('/motion/entrance/temperature/plain/', function(req, res, next) {
-	
-	doGetRequest('sensors/' + hueConfig.motionSensorTempEntranceId,
-			function (data) {
-				const temperature = '' + data.state.temperature / 100;
-				res.send(temperature);
-			},
-			function (error) {
-				console.error('[Hue]:\tError / ' + error);
-			},
-			'hue')
-});
-
-
-function doGetRequest(path, callback, error, name) {
+function doHueGetRequest(path) {
 	const options = {
 		uri: 'http://' + hueConfig.hueIp + ':80/api/' + hueConfig.hueUser + '/' + path,
 		method: 'GET'
-	};
-	misc.performRequest(options, 'Hue', true, true).then((result) => {
-		callback(result.data);
+	}
+	return misc.performRequest(options, '[HUE]', true, true);
+}
+
+const getLights = function () {
+	return new Promise(function (resolve, reject) {
+		
+		// get the lights from the HUE rest api
+		doHueGetRequest('lights').then((result) => {
+			const data = result.data;
+			
+			
+			const keys = Object.keys(data);
+			const lights = [];
+			const lights_on = [];
+			const lights_off = [];
+			
+			for (let i = 0; i < keys.length; i++) {
+				const key = keys[i];
+				console.log('[Hue]:\tLight ID ' + key);
+				
+				const light = {
+					id: key,
+					stateOn: data[key].state.on,
+					bri: data[key].state.bri,
+					name: data[key].name,
+					type: data[key].type
+				};
+				
+				if (light.stateOn) lights_on.push(light);
+				else lights_off.push(light);
+				lights.push(light);
+			}
+			
+			const lightsResult = {
+				count: lights.length,
+				lightsOn: lights_on.length,
+				lightsOff: lights_off.length,
+				lights: lights
+			}
+			
+			resolve(lightsResult);
+			
+		})
+		.catch((err) => {
+			console.error('[Hue]:\tgetLights() - Error: ' + err);
+			reject(err);
+		});
 	});
 }
 
 module.exports = router;
+module.exports.getLights = getLights;
