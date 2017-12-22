@@ -1,5 +1,5 @@
 const schedule = require('node-schedule');
-const hs110Plugs = require('./routes/hs110Plugs')
+const hs110Plugs = require('./routes/power')
 const espresso = require('./routes/espressoMachine');
 const moment = require('moment');
 
