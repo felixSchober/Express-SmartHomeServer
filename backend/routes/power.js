@@ -55,6 +55,29 @@ router.get('/', function(req, res, next) {
 	res.send('Power REST Api');
 });
 
+
+router.get('/total', function(req, res, next) {
+	let currentPower = 0.0;
+	
+	// for the calculation take
+	//		Media
+	//		Kitchen
+	//		Computer
+	//		Lights (not included in total power)
+	currentPower += lastPowerStateBuffer.powerStates[1];
+	currentPower += lastPowerStateBuffer.powerStates[2];
+	currentPower += lastPowerStateBuffer.powerStates[3];
+	
+	getAggregatedPowerLevelForLightsThatContributeToTotalPower()
+	.then((lightsPower) => {
+		currentPower += lightsPower;
+		res.status(200).send({success: true, power: currentPower});
+	}).catch(function (err) {
+		console.error('[POWER]:\trouter.get(\'/total\', function(req, res, next) - Could not get power information for lights. Error: ' + err);
+		res.status(500).send({success: true, power: currentPower});
+	});
+});
+
 router.get('/plugs/', function(req, res, next) {
 	
 	// get the plugs object from mongoose
