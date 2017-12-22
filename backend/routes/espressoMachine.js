@@ -4,7 +4,7 @@ const path = require('path');
 const EspressoMachine = require('./../models/espresso')
 const PythonShell = require('python-shell');
 const moment = require('moment');
-const hs110Plugs = require('./hs110Plugs');
+const hs110Plugs = require('./power');
 const schedule = require('node-schedule');
 
 
