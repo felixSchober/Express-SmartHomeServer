@@ -211,9 +211,11 @@ router.get('/lights/powerState', function(req, res, next) {
 	const getLiveResults = req.query.live || false;
 	
 	if (!getLiveResults) {
+		const index = lastPowerStateBuffer.powerStates.length - 1
+		
 		// get current index of plug so that we can save it in the buffer
 		res.status(200)
-		.send({success: true, power: lastPowerStateBuffer.powerStates['Lights']});
+		.send({success: true, power: lastPowerStateBuffer.powerStates[index]});
 		return;
 	}
 	
@@ -221,7 +223,7 @@ router.get('/lights/powerState', function(req, res, next) {
 	// get 'live' results
 	getAggregatedPowerLevelForLights()
 	.then((power) => {
-		res.status(200).send({success: true, power: power});
+		res.status(200).send({success: true, state: power});
 	})
 	.catch(function (err) {
 		console.error('[POWER]:\trouter.get(\'/lights/powerState\', function(req, res, next) - Could not get power level for lights. Error: ' + err);
