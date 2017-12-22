@@ -97,7 +97,8 @@ const getLights = function () {
 					stateOn: data[key].state.on,
 					bri: data[key].state.bri,
 					name: data[key].name,
-					type: data[key].type
+					type: data[key].type,
+					id: data[key].uniqueid
 				};
 				
 				if (light.stateOn) lights_on.push(light);
@@ -106,10 +107,12 @@ const getLights = function () {
 			}
 			
 			const lightsResult = {
-				count: lights.length,
-				lightsOn: lights_on.length,
-				lightsOff: lights_off.length,
-				lights: lights
+				lightsCount: lights.length,
+				lightsOnCount: lights_on.length,
+				lightsOffCount: lights_off.length,
+				lights: lights,
+				lightsOn: lights_on,
+				lightsOff: lights_off
 			}
 			
 			resolve(lightsResult);

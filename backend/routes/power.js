@@ -4,6 +4,8 @@ const path = require('path');
 const http = require('http');
 const request = require('request');
 const misc = require('../misc');
+const hue = require('./hue');
+const hueConfig = require('./../config/hue');
 const { Client } = require('tplink-smarthome-api');
 const energyModel = require('./../models/energy');
 
@@ -12,7 +14,7 @@ const client = new Client();
 const energyHistoryUpdateEveryXSeconds = 10;
 const energyHistoryEntriesPerHour = 60 * 60 / energyHistoryUpdateEveryXSeconds;
 
-const plugs = {
+const powerElements = {
 	'Espresso': '192.168.178.62',
 	'Media': '192.168.178.66',
 	'Kitchen': '192.168.178.65',
@@ -21,14 +23,27 @@ const plugs = {
 	'plugs': ['Espresso', 'Media', 'Kitchen', 'Computer'],
 };
 
+const lightsThatCountTowardsTotal = [
+		'00:17:88:01:10:5c:37:d0-0b', // Eingang
+		'00:17:88:01:10:5c:3c:f5-0b', // Kueche
+		'00:17:88:01:10:51:b7:f6-0b', // Stehlampe Oben
+		'00:17:88:01:10:31:10:71-0b', // Stehlampe Farbe
+		'00:17:88:01:10:50:15:9d-0b', // Stehlampe Unten
+		'00:17:88:01:00:cb:7d:95-0b', // Fenster
+		'00:17:88:01:02:7b:29:94-0b', // Decke
+		'7c:b0:3e:aa:00:a3:ca:f5-03', // Schrank
+		'84:18:26:00:00:0c:6f:43-03'  // Arbeitsplatte
+];
+
 const lastPowerStateBuffer = {
 	'flushCounter': 0,
-	'powerStates': [0, 0, 0, 0],
+	'powerStates': [0, 0, 0, 0, 0],
 	'powerHistories': {
 		'Espresso': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Media': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Kitchen': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Computer': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
+		'Lights': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 	}
 }
 
@@ -37,7 +52,7 @@ const lastPowerStateBuffer = {
  */
 router.get('/', function(req, res, next) {
 	
-	res.send('HS110 Plug REST Api');
+	res.send('Power REST Api');
 });
 
 router.get('/plugs/', function(req, res, next) {
@@ -64,7 +79,7 @@ router.get('/plugs/powerState', function(req, res, next) {
 });
 
 router.get('/plugs/:plugName', function(req, res, next) {
-	client.getDevice({host: plugs[req.params.plugName]})
+	client.getDevice({host: powerElements[req.params.plugName]})
 	.then((device) => {
 		
 		// get plug state
@@ -74,12 +89,12 @@ router.get('/plugs/:plugName', function(req, res, next) {
 		})
 		.catch((err) => {
 			console.error('[POWER]:\trouter.get(\'/plugs/:plugName\', function(req, res, next) - Could not get power level from HS110 API. Error: ' + err);
-			res.status(500).send({success: false, error: err, device: plugs[req.params.plugName]});
+			res.status(500).send({success: false, error: err, device: powerElements[req.params.plugName]});
 		});
 		
 	}).catch(function (err) {
 		console.error('[POWER]:\trouter.get(\'/plugs/:plugName\', function(req, res, next) - Could not get device from HS110 API. Error: ' + err);
-		res.status(500).send({success: false, error: err, device: plugs[req.params.plugName]});
+		res.status(500).send({success: false, error: err, device: powerElements[req.params.plugName]});
 	});
 });
 
@@ -100,13 +115,13 @@ router.put('/plugs', function(req, res, next) {
 			res.status(500).send(err);
 		}
 		
-		console.log('[Plugs]:\tCreated new plug');
+		console.log('[POWER]:\tCreated new plug');
 		res.send(plug);
 	});
 });
 
 router.get('/plugs/:plugName/state', function(req, res, next) {
-	client.getDevice({host: plugs[req.params.plugName]})
+	client.getDevice({host: powerElements[req.params.plugName]})
 	.then((device) => {
 		
 		device.getSysInfo()
@@ -115,12 +130,12 @@ router.get('/plugs/:plugName/state', function(req, res, next) {
 			else res.send({stateOn: false});
 		}).catch(function (err) {
 			console.error('[POWER]:\trouter.get(\'/plugs/:plugName/state\', function(req, res, next) - Could not get relay state of plug. Error: ' + err);
-			res.status(500).send({success: false, error: err, device: plugs[req.params.plugName]});
+			res.status(500).send({success: false, error: err, device: powerElements[req.params.plugName]});
 		});
 	})
 	.catch(function (err) {
 		console.error('[POWER]:\trouter.get(\'/plugs/:plugName/state\', function(req, res, next) - Could not get device from HS110 API. Error: ' + err);
-		res.status(500).send({success: false, error: err, device: plugs[req.params.plugName]});
+		res.status(500).send({success: false, error: err, device: powerElements[req.params.plugName]});
 	});
 });
 
@@ -131,20 +146,20 @@ router.get('/plugs/:plugName/powerState', function(req, res, next) {
 	
 	if (!getLiveResults) {
 		// get current index of plug so that we can save it in the buffer
-		const plugIndex = plugs.plugs.indexOf(plugName);
+		const plugIndex = powerElements.plugs.indexOf(plugName);
 		
 		res.status(200)
-		.send({success: true, device: plugs[plugName], power: lastPowerStateBuffer.powerStates[plugIndex]});
+		.send({success: true, device: powerElements[plugName], power: lastPowerStateBuffer.powerStates[plugIndex]});
 		return
 	}
 	
-	getPowerForPlug(plugs[plugName], false, false)
+	getPowerForPlug(powerElements[plugName], false, false)
 	.then((response) => {
-		res.status(200).send({success: true, device: plugs[plugName], state: response});
+		res.status(200).send({success: true, device: powerElements[plugName], state: response});
 	})
 	.catch(function (err) {
 		console.error('[POWER]:\trouter.get(\'/plugs/:plugName/powerState\', function(req, res, next) - Could not get power for plug. Error: ' + err);
-		res.status(500).send({success: false, error: err, device: plugs[plugName]});
+		res.status(500).send({success: false, error: err, device: powerElements[plugName]});
 	});
 });
 
@@ -182,12 +197,41 @@ router.post('/plugs/:plugName/state', function (req, res) {
 	const stateOn = req.body.stateOn;
 	updatePlugState(req.params.plugName, stateOn)
 	.then((result) => {
-		res.status(200).send({success: true, device: plugs[req.params.plugName], stateOn: result.stateOn});
+		res.status(200).send({success: true, device: powerElements[req.params.plugName], stateOn: result.stateOn});
 	})
 	.catch(function (err) {
 		console.error('[POWER]:\trouter.post(\'/plugs/:plugName/state\', function(req, res, next) - Could not update plug state. Error: ' + err);
-		res.status(500).send({success: false, error: err, device: plugs[req.params.plugName]});
+		res.status(500).send({success: false, error: err, device: powerElements[req.params.plugName]});
 	});
+});
+
+
+router.get('/lights/powerState', function(req, res, next) {
+	
+	const getLiveResults = req.query.live || false;
+	
+	if (!getLiveResults) {
+		// get current index of plug so that we can save it in the buffer
+		res.status(200)
+		.send({success: true, power: lastPowerStateBuffer.powerStates['Lights']});
+		return;
+	}
+	
+	
+	// get 'live' results
+	getAggregatedPowerLevelForLights()
+	.then((power) => {
+		res.status(200).send({success: true, state: power});
+	})
+	.catch(function (err) {
+		console.error('[POWER]:\trouter.get(\'/lights/powerState\', function(req, res, next) - Could not get power level for lights. Error: ' + err);
+		res.status(500).send({success: false, error: err});
+	});
+});
+
+
+router.get('/lights/powerState/history', function(req, res, next) {
+	res.status(200).send({success: true, history: lastPowerStateBuffer.powerHistories['Lights']});
 });
 
 function updatePowerStateAndSaveToDb() {
@@ -199,30 +243,45 @@ function updatePowerStateAndSaveToDb() {
 	else lastPowerStateBuffer.flushCounter++;
 	
 	const promises = [];
-	for (var i = 0; i < plugs.hosts.length; i++) {
-		const plugName = plugs.plugs[i];
-		promises.push(getPowerForPlug(plugName, shouldSaveToDb, false));
+	for (var i = 0; i < powerElements.hosts.length; i++) {
+		const powerElementName = powerElements.plugs[i];
+		promises.push(getPowerForPlug(powerElementName, shouldSaveToDb, false));
 	}
+	
+	// also push lights promise
+	promises.push(getAggregatedPowerLevelForLights());
 	
 	Promise.all(promises)
 	.then(function (results) {
 		for (var i = 0; i < results.length; i++) {
-			const currentPlug = results[i];
+			const currentPowerElement = results[i];
 			
-			// get current index of plug so that we can save it in the buffer
-			const plugIndex = plugs.plugs.indexOf(currentPlug.plugName);
-			if (plugIndex !== -1) {
-				lastPowerStateBuffer.powerStates[plugIndex] = currentPlug.response.power;
+			// if the currentPowerElement has an attribute plugName it's a plug.
+			// otherwise it's a light and we can assume the index to be the last position
+			let powerElementHistoryName = '';
+			let powerLevel = 0;
+			
+			if ('plugName' in currentPowerElement) {
+				// get current index of plug so that we can save it in the buffer
+				const powerElementIndex = powerElements.plugs.indexOf(currentPowerElement.plugName);
+				if (powerElementIndex !== -1) {
+					lastPowerStateBuffer.powerStates[powerElementIndex] = currentPowerElement.response.power;
+				}
+				powerElementHistoryName = currentPowerElement.plugName;
+				powerLevel = currentPowerElement.response.power
+			} else {
+				powerElementHistoryName = 'Lights';
+				powerLevel = currentPowerElement;
 			}
 			
-			lastPowerStateBuffer.powerHistories[currentPlug.plugName].push(currentPlug.response.power);
+			lastPowerStateBuffer.powerHistories[powerElementHistoryName].push(powerLevel);
 			
 			// if the list becomes to long remove the front of the list
-			if (lastPowerStateBuffer.powerHistories[currentPlug.plugName].length > energyHistoryEntriesPerHour) {
-				lastPowerStateBuffer.powerHistories[currentPlug.plugName].shift()
+			if (lastPowerStateBuffer.powerHistories[powerElementHistoryName].length > energyHistoryEntriesPerHour) {
+				lastPowerStateBuffer.powerHistories[powerElementHistoryName].shift()
 			}
 		}
-		console.log('[Plugs]:\tPower State update complete')
+		console.log('[POWER]:\tPower State update complete')
 	})
 	.catch(function (err) {
 		console.error('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least on plug there was an error while getting the data. Error: ' + err);
@@ -232,7 +291,7 @@ function updatePowerStateAndSaveToDb() {
 const updatePlugState = function (plugName, stateOn) {
 	return new Promise(function (resolve, reject) {
 		
-		client.getDevice({host: plugs[plugName]})
+		client.getDevice({host: powerElements[plugName]})
 		.then((device) => {
 			device.setPowerState(stateOn);
 			resolve({stateOn: stateOn});
@@ -245,11 +304,94 @@ const updatePlugState = function (plugName, stateOn) {
 	
 }
 
+function getPowerForLights() {
+	return new Promise(function (resolve, reject) {
+		// get 'on' lights
+		hue.getLights()
+		.then((result) => {
+			const lightsOn = result.lights_off;
+			
+			// create power mapping
+			const lightPowerLevels = lightsOn.map((light) => {
+				// search for light type first
+				let powerLevel = hueConfig.lightTypePowerMapping[light.type];
+				
+				if (powerLevel > -1) light.power = powerLevel;
+				else {
+					// get individual power level per device id
+					light.power = hueConfig.lightIdPowerMapping[light.id];
+				}
+				if (light.power === undefined || light.power === null) {
+					const err = {
+						message: 'power for light is undefined',
+						light: light
+					};
+					console.error('[POWER]:\tgetPowerForLights() - Could not get power level for light ' + light.name);
+					reject(err);
+					return;
+				}
+				
+				// scale power output linearly according to brightness level
+				// plug units are not scalable
+				if (hueConfig.lightsPowerLevelNotScalable.indexOf(light.type) !== -1) {
+					const brightnessScale = light.bri / hueConfig.maxBrightnessLevel;
+					light.power *= brightnessScale;
+				}
+				
+				return light;
+			});
+			resolve(lightPowerLevels);
+		})
+		.catch(function (err) {
+			console.error('[POWER]:\tgetPowerForLights() - Could not get lights from hue module. Error: ' + err);
+			reject(err);
+		});
+	});
+}
+
+function getAggregatedPowerLevelForLightsThatContributeToTotalPower() {
+	return new Promise(function (resolve, reject) {
+		getPowerForLights()
+		.then((lights) => {
+			// get lights that contribute to the total power level that are not already counted by the plugs
+			let totalPower = 0.0
+			for (var i = 0; i < lights.length; i++) {
+				if (lightsThatCountTowardsTotal.indexOf(lights[i].id) !== -1) {
+					totalPower += lights[i].power;
+				}
+			}
+			resolve(totalPower);
+		})
+		.catch(function (err) {
+			console.error('[POWER]:\tgetAggregatedPowerLevelForLightsThatContributeToTotalPower() - Could not get power levels for lights. Error: ' + err);
+			reject(err);
+		});
+	});
+}
+
+function getAggregatedPowerLevelForLights() {
+	return new Promise(function (resolve, reject) {
+		getPowerForLights()
+		.then((lights) => {
+			// get lights that contribute to the total power level that are not already counted by the plugs
+			let totalPower = 0.0
+			for (var i = 0; i < lights.length; i++) {
+				totalPower += lights[i].power;
+			}
+			resolve(totalPower);
+		})
+		.catch(function (err) {
+			console.error('[POWER]:\tgetAggregatedPowerLevelForLights() - Could not get power levels for lights. Error: ' + err);
+			reject(err);
+		});
+	});
+}
+
 const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 	
 	if (useBuffer !== undefined && useBuffer === true) {
 		// get current index of plug so that we can save it in the buffer
-		const plugIndex = plugs.plugs.indexOf(plugName);
+		const plugIndex = powerElements.plugs.indexOf(plugName);
 		
 		// always return a promise
 		return new Promise(function (resolve, reject) {
@@ -257,10 +399,10 @@ const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 		});
 	}
 	
-	console.log('[Plugs]:\tGet power level for plug ' + plugName);
+	console.log('[POWER]:\tGet power level for plug ' + plugName);
 	
 	return new Promise(function (resolve, reject) {
-		const plugHost = plugs[plugName];
+		const plugHost = powerElements[plugName];
 		client.getDevice({host: plugHost})
 		.then((device) => {
 			device.emeter.getRealtime().then((response) => {
@@ -270,16 +412,16 @@ const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 					energyModel.getPlugEnergyHistory(plugName, function (err, plugDbDocument) {
 						if (err) {
 							console.error('[POWER]:\tgetPowerForPlug(' + plugName + ', ' + saveDb + ', ' + useBuffer + ') - mongo db Connection not successful. Error: ' + err);
-							reject({error: err, device: plugs[plugName], state: response});
+							reject({error: err, device: powerElements[plugName], state: response});
 						} else {
-							console.log('[Plugs]:\tFound plug db entry for ' + plugDbDocument.name);
+							console.log('[POWER]:\tFound plug db entry for ' + plugDbDocument.name);
 							plugDbDocument.energyLog.push(response);
 							plugDbDocument.save(function (err) {
 								if (err) {
 									console.error('[POWER]:\tgetPowerForPlug(' + plugName + ', ' + saveDb + ', ' + useBuffer + ') - Could not save plug data to mongo db. Error: ' + err);
-									reject({error: err, device: plugs[plugName], state: response});
+									reject({error: err, device: powerElements[plugName], state: response});
 								} else {
-									console.log('[Plugs]:\tCreated power state log');
+									console.log('[POWER]:\tCreated power state log');
 									resolve({plugName: plugName, response: response});
 								}
 							});

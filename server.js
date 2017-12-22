@@ -19,7 +19,7 @@ const index = require('./backend/routes/index');
 const espressoMachine = require('./backend/routes/espressoMachine');
 const hue = require('./backend/routes/hue');
 const harmony = require('./backend/routes/harmony');
-const hs110 = require('./backend/routes/hs110Plugs');
+const power = require('./backend/routes/power');
 const calendar = require('./backend/routes/calendar');
 const database = require('./backend/config/database');
 
@@ -59,7 +59,7 @@ app.use(function(err, req, res, next) {
 app.use('/api/espresso', espressoMachine);
 app.use('/api/hue', hue)
 app.use('/api/harmony', harmony);
-app.use('/api/hs110', hs110);
+app.use('/api/power', power);
 app.use('/api/calendar', calendar);
 app.use('*', index);
 
