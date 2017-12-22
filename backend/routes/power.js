@@ -309,38 +309,42 @@ function getPowerForLights() {
 		// get 'on' lights
 		hue.getLights()
 		.then((result) => {
-			const lightsOn = result.lights_off;
+			const lightsOn = result.lights_on;
 			
-			// create power mapping
-			const lightPowerLevels = lightsOn.map((light) => {
-				// search for light type first
-				let powerLevel = hueConfig.lightTypePowerMapping[light.type];
-				
-				if (powerLevel > -1) light.power = powerLevel;
-				else {
-					// get individual power level per device id
-					light.power = hueConfig.lightIdPowerMapping[light.id];
-				}
-				if (light.power === undefined || light.power === null) {
-					const err = {
-						message: 'power for light is undefined',
-						light: light
-					};
-					console.error('[POWER]:\tgetPowerForLights() - Could not get power level for light ' + light.name);
-					reject(err);
-					return;
-				}
-				
-				// scale power output linearly according to brightness level
-				// plug units are not scalable
-				if (hueConfig.lightsPowerLevelNotScalable.indexOf(light.type) !== -1) {
-					const brightnessScale = light.bri / hueConfig.maxBrightnessLevel;
-					light.power *= brightnessScale;
-				}
-				
-				return light;
-			});
-			resolve(lightPowerLevels);
+			if (lightsOn === undefined || lightsOn.length < 1) {
+				resolve([]);
+			} else {
+				// create power mapping
+				const lightPowerLevels = lightsOn.map((light) => {
+					// search for light type first
+					let powerLevel = hueConfig.lightTypePowerMapping[light.type];
+					
+					if (powerLevel > -1) light.power = powerLevel;
+					else {
+						// get individual power level per device id
+						light.power = hueConfig.lightIdPowerMapping[light.id];
+					}
+					if (light.power === undefined || light.power === null) {
+						const err = {
+							message: 'power for light is undefined',
+							light: light
+						};
+						console.error('[POWER]:\tgetPowerForLights() - Could not get power level for light ' + light.name);
+						reject(err);
+						return;
+					}
+					
+					// scale power output linearly according to brightness level
+					// plug units are not scalable
+					if (hueConfig.lightsPowerLevelNotScalable.indexOf(light.type) !== -1) {
+						const brightnessScale = light.bri / hueConfig.maxBrightnessLevel;
+						light.power *= brightnessScale;
+					}
+					
+					return light;
+				});
+				resolve(lightPowerLevels);
+			}
 		})
 		.catch(function (err) {
 			console.error('[POWER]:\tgetPowerForLights() - Could not get lights from hue module. Error: ' + err);
