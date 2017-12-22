@@ -311,7 +311,7 @@ function getPowerForLights() {
 		// get 'on' lights
 		hue.getLights()
 		.then((result) => {
-			const lightsOn = result.lights_on;
+			const lightsOn = result.lightsOn;
 			
 			if (lightsOn === undefined || lightsOn.length < 1) {
 				resolve([]);
@@ -338,7 +338,7 @@ function getPowerForLights() {
 					
 					// scale power output linearly according to brightness level
 					// plug units are not scalable
-					if (hueConfig.lightsPowerLevelNotScalable.indexOf(light.type) !== -1) {
+					if (hueConfig.lightsPowerLevelNotScalable.indexOf(light.type) === -1) {
 						const brightnessScale = light.bri / hueConfig.maxBrightnessLevel;
 						light.power *= brightnessScale;
 					}
