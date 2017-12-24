@@ -261,8 +261,8 @@ router.get('/lights/powerState/history', function(req, res, next) {
 
 function updatePowerStateAndSaveToDb() {
 	
-	// save to db every 40 seconds
-	const shouldSaveToDb = lastPowerStateBuffer.flushCounter % 4 === 0;
+	// save to db every 60 seconds
+	const shouldSaveToDb = lastPowerStateBuffer.flushCounter % 6 === 0;
 	
 	if (shouldSaveToDb) lastPowerStateBuffer.flushCounter = 1;
 	else lastPowerStateBuffer.flushCounter++;
