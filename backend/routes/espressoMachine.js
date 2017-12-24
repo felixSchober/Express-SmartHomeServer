@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const EspressoMachine = require('./../models/espresso')
-const PythonShell = require('python-shell');
 const moment = require('moment');
 const hs110Plugs = require('./power');
 const schedule = require('node-schedule');
@@ -68,7 +67,7 @@ router.get('/statistic/total/', function(req, res, next) {
 			name: espressoMachine.name,
 			value: numberOfEspressos
 		}
-		res.json(response);
+		res.status(200).send(response);
 	});
 });
 
@@ -101,7 +100,7 @@ router.get('/statistic/week/', function(req, res, next) {
 			since: firstDayOfCurrentWeek,
 			value: numberOfEspressos
 		}
-		res.send(response);
+		res.status(200).send(response);
 	});
 });
 
