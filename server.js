@@ -21,6 +21,7 @@ const hue = require('./backend/routes/hue');
 const harmony = require('./backend/routes/harmony');
 const power = require('./backend/routes/power');
 const calendar = require('./backend/routes/calendar');
+const mvg = require('./backend/routes/mvg');
 const database = require('./backend/config/database');
 
 // mongoose setup
@@ -61,6 +62,7 @@ app.use('/api/hue', hue)
 app.use('/api/harmony', harmony);
 app.use('/api/power', power);
 app.use('/api/calendar', calendar);
+app.use('/api/mvg', mvg);
 app.use('*', index);
 
 const server = http.createServer(app);
