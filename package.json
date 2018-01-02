@@ -22,7 +22,8 @@
     "request": "^2.81.0",
     "tplink-smarthome-api": "^0.20.1",
     "node-schedule": "^1.2.5",
-    "moment": "^2.19.4"
+    "moment": "^2.19.4",
+    "@lynbarry/mvg-api": "^2.0.1"
   },
   "scripts": {
     "start": "node server.js",
