@@ -2,6 +2,7 @@ const request = require('request');
 const fs = require('fs');
 const readline = require('readline');
 const openHabConfig = require('./config/openhab');
+const moment = require('moment');
 
 const getFirstAndLastDayOfWeek = function() {
 	let today, todayNumber, mondayNumber, sundayNumber, monday, sunday;
@@ -114,6 +115,18 @@ const doOpenHabPostRequest = function(path, body) {
 	return performRequest(options, '[OPENHAB]', true, false);
 }
 
+const checkIfDateToday = function (d) {
+	const today = new Date();
+	return (d.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0));
+}
+
+const checkIfDateTomorrow = function (d) {
+	// create tomorrow object
+	const today = moment();
+	const tomorrow = today.add(1, 'days').toDate();
+	return (d.setHours(0, 0, 0, 0) == tomorrow.setHours(0, 0, 0, 0));
+}
+
 
 module.exports.getFirstAndLastDayOfWeek = getFirstAndLastDayOfWeek;
 module.exports.getFirstDayOfCurrentMonth = getFirstDayOfCurrentMonth;
@@ -123,3 +136,5 @@ module.exports.sortValueListDescending = sortValueListDescending;
 module.exports.sortValueListAscending = sortValueListAscending;
 module.exports.doOpenHabGetRequest = doOpenHabGetRequest;
 module.exports.doOpenHabPostRequest = doOpenHabPostRequest;
+module.exports.checkIfDateToday = checkIfDateToday;
+module.exports.checkIfDateTomorrow = checkIfDateTomorrow;
