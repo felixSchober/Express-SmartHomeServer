@@ -15,6 +15,19 @@ router.get('/', function(req, res, next) {
 	res.send('calendar REST Api');
 });
 
+router.get('/events/', function(req, res, next) {
+	collectEventsFromCalendarURLList(config.calendarICSUrls, true, true)
+	.then((eventList) => {
+		// count how many of them are today
+		const eventsToday = filterPast(eventList)
+		res.status(200).send({count: eventsToday.length, events: eventsToday});
+	})
+	.catch(function (err) {
+		console.error('[CALENDAR]:\trouter.get(\'/events\', function(req, res, next) - Could not get some calendar. Error: ' + err);
+		res.status(500).send({'err': err});
+	});
+});
+
 router.get('/events/today', function(req, res, next) {
 	collectEventsFromCalendarURLList(config.calendarICSUrls, true, true)
 	.then((eventList) => {
@@ -67,6 +80,14 @@ router.get('/events/tomorrow/count', function(req, res, next) {
 		res.status(500).send({'err': err});
 	});
 });
+
+function filterPast(eventList) {
+	return eventList.filter((element) => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		return element.start > today;
+	});
+}
 
 function filterToday(eventList) {
 	return eventList.filter((element) => {
@@ -138,6 +159,12 @@ function extractCalendarEventsFromURL(url, calendarName, anonymizeEvents, conver
 					
 					const evnt = data[k];
 					
+					// skip if we don't have a summary
+					if (evnt.summary == undefined || evnt.summary == "") {
+						console.error('[CALENDAR]:\t[CALENDAR]:\textractCalendarEventsFromURL(' + url + ', ' + calendarName + ', ' + anonymizeEvents + ', ' + convertRecurring + ', ' + manualConversion + ', ' + filterRoom + ') - event data is null: Event: ' + evnt);
+						continue;
+					}
+					
 					// if we should filter by room name only proceed if room name matches
 					if (filterRoom !== null && filterRoom !== undefined && filterRoom === true) {
 						// if no location is specified - continue
@@ -165,7 +192,8 @@ function extractCalendarEventsFromURL(url, calendarName, anonymizeEvents, conver
 						location: evnt.location,
 						status: evnt.status,
 						uid: evnt.uid,
-						sequence: evnt.sequence
+						sequence: evnt.sequence,
+						calendar: calendarName
 					};
 					
 					// substitute summary if anonymizeEvents is true
