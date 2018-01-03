@@ -8,11 +8,18 @@ const hue = require('./hue');
 const hueConfig = require('./../config/hue');
 const { Client } = require('tplink-smarthome-api');
 const energyModel = require('./../models/energy');
+const moment = require('moment');
 
 const client = new Client();
 
+// update every 10 seconds
 const energyHistoryUpdateEveryXSeconds = 10;
+
+// every minute -> 6 entries -> 360 energy entries per hour
 const energyHistoryEntriesPerHour = 60 * 60 / energyHistoryUpdateEveryXSeconds;
+
+// save the energy log to the db every 60 minutes
+const saveToDbEveryXMinutes = 60;
 
 const powerElements = {
 	'Espresso': '192.168.178.62',
@@ -36,7 +43,6 @@ const lightsThatCountTowardsTotal = [
 ];
 
 const lastPowerStateBuffer = {
-	'flushCounter': 0,
 	'powerStates': [0, 0, 0, 0, 0],
 	'powerHistories': {
 		'Espresso': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
@@ -44,7 +50,8 @@ const lastPowerStateBuffer = {
 		'Kitchen': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Computer': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Lights': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
-	}
+	},
+	'powerHistoryKeys': ['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights']
 }
 
 /* GET welcome message
@@ -131,7 +138,9 @@ router.put('/plugs', function(req, res, next) {
 	energyModel.create({
 		name: req.body.name,
 		host: req.body.host,
-		energyLog: []
+		energyLog: [
+			{Logs: [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]}
+		]
 	}, function (err, plug) {
 		if (err) {
 			console.error('[POWER]:\trouter.put(\'/plugs/\', function(req, res, next) - Could not save plug to mongo db. Error: ' + err);
@@ -176,7 +185,7 @@ router.get('/plugs/:plugName/powerState', function(req, res, next) {
 		return
 	}
 	
-	getPowerForPlug(powerElements[plugName], false, false)
+	getPowerForPlug(powerElements[plugName], false)
 	.then((response) => {
 		res.status(200).send({success: true, device: powerElements[plugName], state: response});
 	})
@@ -228,7 +237,6 @@ router.post('/plugs/:plugName/state', function (req, res) {
 	});
 });
 
-
 router.get('/lights/powerState', function(req, res, next) {
 	
 	const getLiveResults = req.query.live || false;
@@ -254,23 +262,65 @@ router.get('/lights/powerState', function(req, res, next) {
 	});
 });
 
-
 router.get('/lights/powerState/history', function(req, res, next) {
 	res.status(200).send({success: true, history: lastPowerStateBuffer.powerHistories['Lights']});
 });
 
-function updatePowerStateAndSaveToDb() {
+function saveEnergyHistoryToDb(energyHistoryKey) {
+	return new Promise(function (resolve, reject) {
+		// log the current level into the database
+		energyModel.getPlugEnergyHistory(energyHistoryKey, function (err, plugDbDocument) {
+			if (err) {
+				console.error('[POWER]:\tsaveEnergyHistoryToDb(' + energyHistoryKey + ') - mongo db Connection not successful. Error: ' + err);
+				reject({error: err, device: energyHistoryKey});
+			} else {
+				if (plugDbDocument === null) {
+					console.error('[POWER]:\tsaveEnergyHistoryToDb(' + energyHistoryKey + ') - Connection OK but result was null.');
+					reject({device: energyHistoryKey});
+				} else {
+					// just to be save also mod currentHour to make sure we are in [0, 23]
+					const currentHour = moment().hour() % 24;
+					console.log('[POWER]:\tsaveEnergyHistoryToDb(' + energyHistoryKey + ') - Found plug db entry for ' + plugDbDocument.name + '. Creating log for hour ' + currentHour);
+					
+					// get the last entry (current day)
+					const currentDayIndex = plugDbDocument.energyLog.length - 1
+					plugDbDocument.energyLog[currentDayIndex][currentHour] = lastPowerStateBuffer.powerHistories[energyHistoryKey];
+					plugDbDocument.save(function (err) {
+						if (err) {
+							console.error('[POWER]:\tsaveEnergyHistoryToDb(' + energyHistoryKey + ') - Could not save plug data to mongo db. Error: ' + err);
+							reject({error: err, device: energyHistoryKey});
+						} else {
+							console.log('[POWER]:\tsaveEnergyHistoryToDb(' + energyHistoryKey + ') -\tSUCCESS');
+							resolve({plugName: energyHistoryKey});
+						}
+					});
+				}
+			}
+		});
+	});
+}
+
+const savePowerStateToDb = function () {
+	const promises = [];
+	for (var i = 0; i < lastPowerStateBuffer.powerHistoryKeys.length; i++) {
+		const historyKey = lastPowerStateBuffer.powerHistoryKeys[i];
+		promises.push(saveEnergyHistoryToDb(historyKey));
+	}
 	
-	// save to db every 60 seconds
-	const shouldSaveToDb = lastPowerStateBuffer.flushCounter % 6 === 0;
-	
-	if (shouldSaveToDb) lastPowerStateBuffer.flushCounter = 1;
-	else lastPowerStateBuffer.flushCounter++;
-	
+	Promise.all(promises)
+	.then(function (results) {
+		console.log('[POWER]:\tsavePowerStateToDb() - Update complete ' + results);
+	})
+	.catch(function (err) {
+		console.error('[POWER]:\tsavePowerStateToDb() - For at least one element there was an error while saving to db. Error: ' + err);
+	});
+}
+
+function updatePowerState() {
 	const promises = [];
 	for (var i = 0; i < powerElements.hosts.length; i++) {
 		const powerElementName = powerElements.plugs[i];
-		promises.push(getPowerForPlug(powerElementName, shouldSaveToDb, false));
+		promises.push(getPowerForPlug(powerElementName, false));
 	}
 	
 	// also push lights promise
@@ -309,7 +359,7 @@ function updatePowerStateAndSaveToDb() {
 		console.log('[POWER]:\tPower State update complete')
 	})
 	.catch(function (err) {
-		console.error('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least on plug there was an error while getting the data. Error: ' + err);
+		console.error('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least one plug there was an error while getting the data. Error: ' + err);
 	});
 }
 
@@ -416,7 +466,7 @@ function getAggregatedPowerLevelForLights() {
 	});
 }
 
-const getPowerForPlug = function(plugName, saveDb, useBuffer) {
+const getPowerForPlug = function(plugName, useBuffer) {
 	
 	if (useBuffer !== undefined && useBuffer === true) {
 		// get current index of plug so that we can save it in the buffer
@@ -435,30 +485,7 @@ const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 		client.getDevice({host: plugHost})
 		.then((device) => {
 			device.emeter.getRealtime().then((response) => {
-				
-				if (saveDb !== undefined && saveDb === true) {
-					// log the current level into the database
-					energyModel.getPlugEnergyHistory(plugName, function (err, plugDbDocument) {
-						if (err) {
-							console.error('[POWER]:\tgetPowerForPlug(' + plugName + ', ' + saveDb + ', ' + useBuffer + ') - mongo db Connection not successful. Error: ' + err);
-							reject({error: err, device: powerElements[plugName], state: response});
-						} else {
-							console.log('[POWER]:\tFound plug db entry for ' + plugDbDocument.name);
-							plugDbDocument.energyLog.push(response);
-							plugDbDocument.save(function (err) {
-								if (err) {
-									console.error('[POWER]:\tgetPowerForPlug(' + plugName + ', ' + saveDb + ', ' + useBuffer + ') - Could not save plug data to mongo db. Error: ' + err);
-									reject({error: err, device: powerElements[plugName], state: response});
-								} else {
-									console.log('[POWER]:\tCreated power state log');
-									resolve({plugName: plugName, response: response});
-								}
-							});
-						}
-					});
-				} else {
-					resolve({plugName: plugName, response: response});
-				}
+				resolve({plugName: plugName, response: response});
 			})
 			.catch(function (err) {
 				reject(err);
@@ -471,8 +498,9 @@ const getPowerForPlug = function(plugName, saveDb, useBuffer) {
 }
 
 module.exports = router;
-module.exports.updatePowerStateAndSaveToDb = updatePowerStateAndSaveToDb;
+module.exports.updatePowerState = updatePowerState;
 module.exports.getPowerForPlug = getPowerForPlug;
 module.exports.updatePlugState = updatePlugState;
 module.exports.energyHistoryEntriesPerHour = energyHistoryEntriesPerHour;
 module.exports.energyHistoryUpdateEveryXSeconds = energyHistoryUpdateEveryXSeconds;
+module.exports.savePowerStateToDb = savePowerStateToDb
