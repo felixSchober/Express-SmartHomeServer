@@ -20,7 +20,7 @@ router.get('/events/today', function(req, res, next) {
 	.then((eventList) => {
 		// count how many of them are today
 		const eventsToday = filterToday(eventList)
-		res.status(200).send({events: eventsToday});
+		res.status(200).send({count: eventsToday.length, events: eventsToday});
 	})
 	.catch(function (err) {
 		console.error('[CALENDAR]:\trouter.get(\'/events/today\', function(req, res, next) - Could not get some calendar. Error: ' + err);
@@ -33,7 +33,7 @@ router.get('/events/tomorrow', function(req, res, next) {
 	.then((eventList) => {
 		// count how many of them are today
 		const eventsToday = filterTomorrow(eventList)
-		res.status(200).send({events: eventsToday});
+		res.status(200).send({count: eventsToday.length, events: eventsToday});
 	})
 	.catch(function (err) {
 		console.error('[CALENDAR]:\trouter.get(\'/events/tomorrow\', function(req, res, next) - Could not get some calendar. Error: ' + err);
