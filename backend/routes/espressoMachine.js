@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const EspressoMachine = require('./../models/espresso')
 const moment = require('moment');
-const hs110Plugs = require('./power');
+const power = require('./power');
 const schedule = require('node-schedule');
 
 
@@ -47,6 +47,35 @@ router.post('/machine/', function (req, res, next) {
 		console.log('[Espresso]:\tCreated new espresso machine');
 		res.json(espressoMachine);
 	})
+})
+
+/* POST Creates new Espresso Machine
+ * /api/espresso/machine/
+ */
+router.put('/machine/:name/espresso', function (req, res, next) {
+	const machineName = req.params.name;
+	
+	// Save to DB
+	// get the espresso object from mongoose
+	EspressoMachine.getEspressoMachine(function (err, espressoMachine) {
+		if (err) {
+			console.error('[Espresso]:\trouter.put(\'/machine/:name/espresso\', function(req, res, next) - Could connect to DB. Error: ' + err);
+			res.status(500).send(err);
+		} else {
+			// create espresso object for logging
+			espressoMachine.espressos.push({});
+			console.log('[Espresso]:\trouter.put(\'/machine/:name/espresso\', function(req, res, next) - New Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
+			espressoMachine.save(function (err) {
+				if (err) {
+					console.error('[Espresso]:\trouter.put(\'/machine/:name/espresso\', function(req, res, next) - Could not create espresso object. Error: ' + err);
+					res.status(500).send(err);
+				} else {
+					console.log('[Espresso]:\trouter.put(\'/machine/:name/espresso\', function(req, res, next) - Created espresso object');
+					res.status(201).send(espressoMachine.espressos[espressoMachine.espressos.length - 1])
+				}
+			});
+		}
+	});
 })
 
 /* GET total number of espressos drunk
@@ -111,7 +140,8 @@ const checkIfNewEspressoHasBeenCreated = function () {
 	if (timeDiff < 6) return;
 	
 	// check current power state
-	hs110Plugs.getPowerForPlug(espressoPlugName, false, true).then((power) => {
+	power.getPowerForPlug(espressoPlugName, false, true).then((power) => {
+		power = power.response.power;
 		if (power > espressoPowerThreshold) {
 			console.log('[Espresso]:\tDetected new Espresso. Current Power: ' + power);
 			
@@ -146,7 +176,7 @@ const checkIfNewEspressoHasBeenCreated = function () {
 }
 
 const turnMachineOffAgain = function () {
-	hs110Plugs.updatePlugState(espressoPlugName, false).then(function (result) {
+	power.updatePlugState(espressoPlugName, false).then(function (result) {
 		console.log('[Espresso]:\tMachine was turned off' + result);
 	}).catch(function (err) {
 		console.error('[Espresso]:\tturnMachineOffAgain - Could not turn off espresso. Error: ' + err);
