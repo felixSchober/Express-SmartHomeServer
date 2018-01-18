@@ -67,10 +67,87 @@ router.get('/sensors/:motionSensorName/temperature/', function(req, res, next) {
 	}
 });
 
+router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) {
+	const groupId = req.params.groupId;
+	const sceneId = req.params.sceneId;
+	
+	if (groupId === null
+			|| groupId === undefined
+			|| groupId === '') {
+		console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error: group id is not set correctly.' + groupId);
+		res.status(400).send({error: 'Param motionSensorName is not set correctly.'});
+	} else if (sceneId === null
+			|| sceneId === undefined
+			|| sceneId === '') {
+		console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error: scene id is not set correctly.' + sceneId);
+		res.status(400).send({error: 'Param motionSensorName is not set correctly.'});
+	} else {
+		
+		// get current state of group
+		const groupRequestPath = 'groups/' + groupId
+		doHueGetRequest(groupRequestPath)
+		.then((result) => {
+			const data = result.data;
+			
+			// current state
+			const currentStateAllOn = data.state.all_on;
+			
+			const action = {};
+			if (currentStateAllOn) { // turn scene off
+				action.on = false;
+			} else {				// turn scene on
+				action.scene = sceneId;
+			}
+			
+			// perform request
+			performGroupStateAction(action, groupId)
+			.then((result) => {
+				const response = {
+					last_state: currentStateAllOn,
+					new_state_response: result
+				}
+				res.send(response);
+			})
+			.catch((err) => {
+				console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error while sending the group change request: ' + err);
+				res.status(500).send(err);
+			});
+		})
+		.catch((err) => {
+			console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error while trying to get the currents group state: ' + err);
+			res.status(500).send(err);
+		});
+	}
+});
+
 function doHueGetRequest(path) {
 	const options = {
 		uri: 'http://' + hueConfig.hueIp + ':80/api/' + hueConfig.hueUser + '/' + path,
 		method: 'GET'
+	}
+	return misc.performRequest(options, '[HUE]', true, true);
+}
+
+function performGroupStateAction(newGroupState, group) {
+	return new Promise(function (resolve, reject) {
+		const path = 'groups/' + group + '/action';
+		doHuePutRequest(path, newGroupState)
+		.then((result) => {
+			console.log('[Hue]:\tperformGroupStateAction(' + newGroupState + ', ' + group + ') - Performed request to hue API');
+			resolve(result.data);
+		})
+		.catch((err) => {
+			console.error('[Hue]:\tperformGroupStateAction(' + newGroupState + ', ' + group + ') - Could not complete hue action change request: ' + err);
+			reject(err);
+		});
+	})
+}
+
+function doHuePutRequest(path, body) {
+	const options = {
+		uri: 'http://' + hueConfig.hueIp + ':80/api/' + hueConfig.hueUser + '/' + path,
+		method: 'PUT',
+		json: body
 	}
 	return misc.performRequest(options, '[HUE]', true, true);
 }
