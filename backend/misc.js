@@ -116,11 +116,17 @@ const doOpenHabPostRequest = function(path, body) {
 	return performRequest(options, '[OPENHAB]', true, false);
 }
 
-const pushDataToDashboardWidget = function (sender, widgetId, data) {
+const pushDataToDashboardWidget = function (sender, widgetId, data, dataType) {
 	const jsonBody = {
 		'auth_token': config.dashboardApiKey,
-		'current': data
 	};
+	
+	if (dataType === "Number") {
+		jsonBody.current = data;
+	} else if (dataType === "Text") {
+		jsonBody.text = data;
+	}
+	
 	const options = {
 		uri: 'http://' + config.dashboardHost + '/widgets/' + widgetId,
 		method: 'POST',

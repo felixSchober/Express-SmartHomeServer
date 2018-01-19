@@ -146,8 +146,8 @@ const checkIfNewEspressoHasBeenCreated = function () {
 					const numberOfEspressosThisWeek = getNumberOfEspressosThisWeek(espressoMachine.espressos);
 					const totalNumberOfEspressos = espressoMachine.espressos.length;
 					
-					misc.pushDataToDashboardWidget('Espresso', config.espressoWeeklyWidgetId, numberOfEspressosThisWeek);
-					misc.pushDataToDashboardWidget('Espresso', config.espressoTotalWidgetId, totalNumberOfEspressos);
+					misc.pushDataToDashboardWidget('Espresso', config.espressoWeeklyWidgetId, numberOfEspressosThisWeek, 'Number');
+					misc.pushDataToDashboardWidget('Espresso', config.espressoTotalWidgetId, totalNumberOfEspressos, 'Number');
 					
 					espressoMachine.save(function (err) {
 						if (err) {
