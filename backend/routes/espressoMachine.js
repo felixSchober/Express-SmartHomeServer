@@ -5,11 +5,10 @@ const EspressoMachine = require('./../models/espresso')
 const moment = require('moment');
 const power = require('./power');
 const schedule = require('node-schedule');
-
+const misc = require('./../misc');
+const config = require('./../config/espresso');
 
 let lastEspressoTime = moment().subtract(10, 'years');
-const espressoPlugName = 'Espresso';
-const espressoPowerThreshold = 1;
 
 /* GET espresso status.
  * /api/espresso/
@@ -112,21 +111,9 @@ router.get('/statistic/week/', function(req, res, next) {
 			res.status(500).send(err);
 			return;
 		}
-		
-		const firstDayOfCurrentWeek = getFirstAndLastDayOfWeek().monday;
-		let numberOfEspressos = 0;
-		for (let i = espressoMachine.espressos.length - 1; i >= 0; i--) {
-			const espresso = espressoMachine.espressos[i];
-			if (espresso.created >= firstDayOfCurrentWeek) {
-				numberOfEspressos++;
-			} else {
-				// we've gone to far in the past so let's stop here
-				break;
-			}
-		}
+		const numberOfEspressos = getNumberOfEspressosThisWeek(espressoMachine.espressos);
 		const response = {
 			name: espressoMachine.name,
-			since: firstDayOfCurrentWeek,
 			value: numberOfEspressos
 		}
 		res.status(200).send(response);
@@ -140,9 +127,9 @@ const checkIfNewEspressoHasBeenCreated = function () {
 	if (timeDiff < 6) return;
 	
 	// check current power state
-	power.getPowerForPlug(espressoPlugName, false, true).then((power) => {
+	power.getPowerForPlug(config.espressoPlugName, false, true).then((power) => {
 		power = power.response.power;
-		if (power > espressoPowerThreshold) {
+		if (power > config.espressoPowerThreshold) {
 			console.log('[Espresso]:\tDetected new Espresso. Current Power: ' + power);
 			
 			// Save to DB
@@ -153,7 +140,15 @@ const checkIfNewEspressoHasBeenCreated = function () {
 				} else {
 					// create espresso object for logging
 					espressoMachine.espressos.push({});
-					console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1])
+					console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1]);
+					
+					// count espressos this week and push to dashboard
+					const numberOfEspressosThisWeek = getNumberOfEspressosThisWeek(espressoMachine.espressos);
+					const totalNumberOfEspressos = espressoMachine.espressos.length;
+					
+					misc.pushDataToDashboardWidget('Espresso', config.espressoWeeklyWidgetId, numberOfEspressosThisWeek);
+					misc.pushDataToDashboardWidget('Espresso', config.espressoTotalWidgetId, totalNumberOfEspressos);
+					
 					espressoMachine.save(function (err) {
 						if (err) {
 							console.error('[Espresso]:\tcheckIfNewEspressoHasBeenCreated - Could not create espresso object. Error: ' + err);
@@ -176,11 +171,26 @@ const checkIfNewEspressoHasBeenCreated = function () {
 }
 
 const turnMachineOffAgain = function () {
-	power.updatePlugState(espressoPlugName, false).then(function (result) {
+	power.updatePlugState(config.espressoPlugName, false).then(function (result) {
 		console.log('[Espresso]:\tMachine was turned off' + result);
 	}).catch(function (err) {
 		console.error('[Espresso]:\tturnMachineOffAgain - Could not turn off espresso. Error: ' + err);
 	});
+}
+
+function getNumberOfEspressosThisWeek(espressoList) {
+	const firstDayOfCurrentWeek = getFirstAndLastDayOfWeek().monday;
+	let numberOfEspressos = 0;
+	for (let i = espressoList.length - 1; i >= 0; i--) {
+		const espresso = espressoList[i];
+		if (espresso.created >= firstDayOfCurrentWeek) {
+			numberOfEspressos++;
+		} else {
+			// we've gone to far in the past so let's stop here
+			break;
+		}
+	}
+	return numberOfEspressos;
 }
 
 
