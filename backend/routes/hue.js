@@ -75,12 +75,12 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 			|| groupId === undefined
 			|| groupId === '') {
 		console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error: group id is not set correctly.' + groupId);
-		res.status(400).send({error: 'Param motionSensorName is not set correctly.'});
+		res.status(400).send({error: 'Param group id is not set correctly.'});
 	} else if (sceneId === null
 			|| sceneId === undefined
 			|| sceneId === '') {
 		console.error('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Error: scene id is not set correctly.' + sceneId);
-		res.status(400).send({error: 'Param motionSensorName is not set correctly.'});
+		res.status(400).send({error: 'Param scene id is not set correctly.'});
 	} else {
 		
 		// get current state of group
@@ -102,6 +102,14 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 			// perform request
 			performGroupStateAction(action, groupId)
 			.then((result) => {
+				
+				// push new status to dashboard
+				if (currentStateAllOn) {
+					misc.pushDataToDashboardWidget('Hue', hueConfig.kitchenSceneGroupStatusWidgetId, 'Off', 'Text');
+				} else {
+					misc.pushDataToDashboardWidget('Hue', hueConfig.kitchenSceneGroupStatusWidgetId, 'On', 'Text');
+				}
+				
 				const response = {
 					last_state: currentStateAllOn,
 					new_state_response: result

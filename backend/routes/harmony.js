@@ -80,6 +80,7 @@ router.post('/activity/start/', function (req, res) {
 	const device = req.body.device;
 	misc.doOpenHabPostRequest('items/HarmonyHub_CurrentActivity', device)
 	.then(function (result) {
+		misc.pushDataToDashboardWidget('Harmony', 'tvStatus', device, 'Text');
 		res.status(200).send({success: true, result: result, device: device});
 	})
 	.catch(function (err) {
@@ -94,6 +95,7 @@ router.post('/activity/start/', function (req, res) {
 router.post('/activity/stop/', function (req, res) {
 	misc.doOpenHabPostRequest('items/HarmonyHub_CurrentActivity', 'PowerOff')
 	.then(function (result) {
+		misc.pushDataToDashboardWidget('Harmony', 'tvStatus', 'Off', 'Text');
 		res.status(200).send({success: true, result: result});
 	})
 	.catch(function (err) {
