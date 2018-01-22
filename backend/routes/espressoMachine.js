@@ -139,7 +139,8 @@ const checkIfNewEspressoHasBeenCreated = function () {
 					console.error('[Espresso]:\tcheckIfNewEspressoHasBeenCreated - Could connect to DB. Error: ' + err);
 				} else {
 					// create espresso object for logging
-					espressoMachine.espressos.push({});
+					const espressoObject = {created: new Date()};
+					espressoMachine.espressos.push(espressoObject);
 					console.log('[Espresso]:\tNew Espresso : ' + espressoMachine.espressos[espressoMachine.espressos.length - 1]);
 					
 					// count espressos this week and push to dashboard
@@ -186,8 +187,9 @@ function getNumberOfEspressosThisWeek(espressoList) {
 		if (espresso.created >= firstDayOfCurrentWeek) {
 			numberOfEspressos++;
 		} else {
+			// TODO: reenable that!
 			// we've gone to far in the past so let's stop here
-			break;
+			//break;
 		}
 	}
 	return numberOfEspressos;
