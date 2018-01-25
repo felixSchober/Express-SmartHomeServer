@@ -478,7 +478,7 @@ const getPowerForPlug = function(plugName, useBuffer) {
 		});
 	}
 	
-	console.log('[POWER]:\tGet power level for plug ' + plugName);
+	console.log('[POWER]:\tGet live power level for plug ' + plugName);
 	
 	return new Promise(function (resolve, reject) {
 		const plugHost = powerElements[plugName];

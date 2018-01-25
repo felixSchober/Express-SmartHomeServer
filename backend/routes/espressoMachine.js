@@ -77,6 +77,46 @@ router.put('/machine/:name/espresso', function (req, res, next) {
 	});
 })
 
+
+router.post('/machine/:name/state/toggle', function (req, res, next) {
+	const machineName = req.params.name;
+	
+	
+	// make a "callback" possible which means that the status is pushed here back to the dashboard
+	const widgetIdsToPush = req.body.widgetIds || [];
+	
+	console.log('[Espresso]:\trouter.post(\'/machine/:name/state/toggle\', function(req, res, next) - Toggle machine state');
+	
+	power.getPowerForPlug(config.espressoPlugName, false)
+	.then((response) => {
+		const power = response.response.power;
+		
+		// machine is on if the plug uses more than 0.5 watts
+		const machineInOn = power > 0.5;
+		
+		power.updatePlugState(config.espressoPlugName, !machineInOn)
+		.then((response) => {
+			const newStatusText = machineInOn ? 'OFF' : 'ON';
+			for (var i = 0; i < widgetIdsToPush.length; i++) {
+				console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Pushing new hue state (' + newStatusText + ') to widget id : ' + widgetIdsToPush[i]);
+				misc.pushDataToDashboardWidget('Hue', widgetIdsToPush[i], newStatusText, 'Text');
+			}
+			// TODO: send new status
+			res.send(response);
+		})
+		.catch(function (err) {
+			console.error('[Espresso]:\trouter.post(\'/machine/:name/state/toggle\', function(req, res, next) - Could not set new plug state. Error: ' + err);
+			res.status(500).send({error: err, message: 'Could not set new plug state.'});
+		});
+	})
+	.catch(function (err) {
+		console.error('[Espresso]:\trouter.post(\'/machine/:name/state/toggle\', function(req, res, next) - Could not get plug state. Error: ' + err);
+		res.status(500).send({error: err, message: 'Could not get plug state.'});
+	});
+	
+})
+
+
 /* GET total number of espressos drunk
  * /api/espresso/statistic/total
  */
