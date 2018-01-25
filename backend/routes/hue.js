@@ -71,6 +71,9 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 	const groupId = req.params.groupId;
 	const sceneId = req.params.sceneId;
 	
+	// make a "callback" possible which means that the status is pushed here back to the dashboard
+	const widgetIdsToPush = req.body.widgetIds || [];
+	
 	if (groupId === null
 			|| groupId === undefined
 			|| groupId === '') {
@@ -104,10 +107,10 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 			.then((result) => {
 				
 				// push new status to dashboard
-				if (currentStateAllOn) {
-					misc.pushDataToDashboardWidget('Hue', hueConfig.kitchenSceneGroupStatusWidgetId, 'Off', 'Text');
-				} else {
-					misc.pushDataToDashboardWidget('Hue', hueConfig.kitchenSceneGroupStatusWidgetId, 'On', 'Text');
+				const newStatusText = currentStateAllOn ? 'ON' : 'OFF';
+				for (var i = 0; i < widgetIdsToPush.length; i++) {
+					console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Pushing new hue state (' + newStatusText + ') to widget id : ' + widgetIdsToPush[i]);
+					misc.pushDataToDashboardWidget('Hue', widgetIdsToPush[i], newStatusText, 'Text');
 				}
 				
 				const response = {
