@@ -89,10 +89,10 @@ router.post('/machine/:name/state/toggle', function (req, res, next) {
 	
 	power.getPowerForPlug(config.espressoPlugName, false)
 	.then((response) => {
-		const power = response.response.power;
+		const powerWattage = response.response.power;
 		
 		// machine is on if the plug uses more than 0.5 watts
-		const machineInOn = power > 0.5;
+		const machineInOn = powerWattage > 0.5;
 		
 		power.updatePlugState(config.espressoPlugName, !machineInOn)
 		.then((response) => {
