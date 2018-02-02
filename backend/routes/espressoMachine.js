@@ -9,6 +9,7 @@ const misc = require('./../misc');
 const config = require('./../config/espresso');
 
 let lastEspressoTime = moment().subtract(10, 'years');
+let turnOffMachineInXSeconds = -1;
 
 /* GET espresso status.
  * /api/espresso/
@@ -81,7 +82,6 @@ router.put('/machine/:name/espresso', function (req, res, next) {
 router.post('/machine/:name/state/toggle', function (req, res, next) {
 	const machineName = req.params.name;
 	
-	
 	// make a "callback" possible which means that the status is pushed here back to the dashboard
 	const widgetIdsToPush = req.body.widgetIds || [];
 	
@@ -99,7 +99,7 @@ router.post('/machine/:name/state/toggle', function (req, res, next) {
 			const newStatusText = machineInOn ? 'OFF' : 'ON';
 			for (var i = 0; i < widgetIdsToPush.length; i++) {
 				console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Pushing new hue state (' + newStatusText + ') to widget id : ' + widgetIdsToPush[i]);
-				misc.pushDataToDashboardWidget('Hue', widgetIdsToPush[i], newStatusText, 'Text');
+				misc.pushDataToDashboardWidget('Espresso', widgetIdsToPush[i], newStatusText, 'Text');
 			}
 			// TODO: send new status
 			res.send(response);
@@ -113,8 +113,13 @@ router.post('/machine/:name/state/toggle', function (req, res, next) {
 		console.error('[Espresso]:\trouter.post(\'/machine/:name/state/toggle\', function(req, res, next) - Could not get plug state. Error: ' + err);
 		res.status(500).send({error: err, message: 'Could not get plug state.'});
 	});
-	
-})
+});
+
+router.post('/machine/:name/state/countdown/:seconds', function (req, res, next) {
+	const timeToToggle = parseInt(req.params.seconds);
+	initializeMachineTurnOffCountdown(timeToToggle);
+	res.status(200).send({seconds: turnOffMachineInXSeconds});
+});
 
 
 /* GET total number of espressos drunk
@@ -170,6 +175,7 @@ const checkIfNewEspressoHasBeenCreated = function () {
 	power.getPowerForPlug(config.espressoPlugName, false, true).then((power) => {
 		power = power.response.power;
 		if (power > config.espressoPowerThreshold) {
+			misc.pushDataToDashboardWidget('Espresso', config.currentStatusWidgetId, 'ON', 'Text');
 			console.log('[Espresso]:\tDetected new Espresso. Current Power: ' + power);
 			
 			// Save to DB
@@ -201,22 +207,61 @@ const checkIfNewEspressoHasBeenCreated = function () {
 				}
 			});
 			
-			// schedule turn off in latest 5 minutes
+			// turn machine off in 5 minutes with a "silent" job
 			let now = moment();
 			const turnOffDate = now.add(5, 'minutes').toDate();
 			const job = schedule.scheduleJob(turnOffDate, turnMachineOffAgain);
-			console.log('[Espresso]:\tCreated job to turn off machine in ' + moment(turnOffDate).fromNow());
-			
+			console.log('[Espresso]:\tCreated (silent) job to turn off machine in ' + moment(turnOffDate).fromNow());
 		}
 	})
 }
 
+function initializeMachineTurnOffCountdown(inXSeconds) {
+	// has the countdown not been initialized yet?
+	if (turnOffMachineInXSeconds === -1) {
+		turnOffMachineInXSeconds = inXSeconds;
+	} else {
+		turnOffMachineInXSeconds += inXSeconds;
+	}
+	machineTurnOffCountdown();
+}
+
+function machineTurnOffCountdown() {
+	notifyWidgetsOfMachineCountdown(turnOffMachineInXSeconds);
+	//should we turn it off?
+	if (turnOffMachineInXSeconds <= 0) {
+		turnMachineOffAgain();
+		turnOffMachineInXSeconds = -1;
+	} else {
+		// reduce countdown and wait one second
+		turnOffMachineInXSeconds--;
+		setTimeout(machineTurnOffCountdown, 1000);
+	}
+}
+
+function notifyWidgetsOfMachineCountdown(countdownValue) {
+	misc.pushDataToDashboardWidget('Espresso', config.plus10WidgetId, countdownValue, 'Number');
+	misc.pushDataToDashboardWidget('Espresso', config.plus50WidgetId, countdownValue, 'Number');
+	misc.pushDataToDashboardWidget('Espresso', config.cleanStatusWidgetId, countdownValue, 'Number');
+	
+	if (countdownValue <= 0) {
+		misc.pushDataToDashboardWidget('Espresso', config.currentStatusWidgetId, 'OFF', 'Text');
+	} else {
+		misc.pushDataToDashboardWidget('Espresso', config.currentStatusWidgetId, 'ON', 'Text');
+	}
+}
+
 const turnMachineOffAgain = function () {
-	power.updatePlugState(config.espressoPlugName, false).then(function (result) {
-		console.log('[Espresso]:\tMachine was turned off' + result);
-	}).catch(function (err) {
-		console.error('[Espresso]:\tturnMachineOffAgain - Could not turn off espresso. Error: ' + err);
-	});
+	// only turn off if no countdown is remaining
+	if (turnOffMachineInXSeconds <= 0) {
+		power.updatePlugState(config.espressoPlugName, false).then(function (result) {
+			console.log('[Espresso]:\tMachine was turned off' + result);
+		}).catch(function (err) {
+			console.error('[Espresso]:\tturnMachineOffAgain - Could not turn off espresso. Error: ' + err);
+		});
+	} else {
+		console.log('[Espresso]:\tMachine should be turned off but there is still countdown remaining');
+	}
 }
 
 function getNumberOfEspressosThisWeek(espressoList) {
