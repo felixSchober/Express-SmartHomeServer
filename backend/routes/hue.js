@@ -7,6 +7,11 @@ const misc = require('../misc');
 const hueConfig = require('./../config/hue')
 
 
+// scene cache
+// there is no way to get the active scene from the hue api. So to be able to toggle scenes we have keep track of
+// scenes we active.
+const currentGroupStates = {};
+
 /* GET all sensors
  * /api/hue/
  */
@@ -74,6 +79,12 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 	// make a "callback" possible which means that the status is pushed here back to the dashboard
 	const widgetIdsToPush = req.body.widgetIds || [];
 	
+	// restore a scene if restoreScene is set
+	const restoreScene = req.body.restoreScene || '';
+	
+	// add a transition time if set
+	const transitionTime = parseInt(req.body.transitionTime) || -1;
+	
 	if (groupId === null
 			|| groupId === undefined
 			|| groupId === '') {
@@ -92,29 +103,57 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 		.then((result) => {
 			const data = result.data;
 			
+			// try to find the group state from the cached group state
+			if (currentGroupStates === undefined) {
+				console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Group ' + groupId + ' is new.');
+				
+				// group state was not found -> create it and set initial state
+				const currentStateAllOn = data.state.all_on;
+				currentGroupStates[groupId] = {
+					sceneActive: currentStateAllOn,
+					lastSceneId: ''
+				};
+			}
+			
 			// current state
-			const currentStateAllOn = data.state.all_on;
+			let groupState = currentGroupStates[groupId];
 			
 			const action = {};
-			if (currentStateAllOn) { // turn scene off
-				action.on = false;
+			if (groupState.sceneActive) { // turn scene off
+				// should we restore a scene or just turn off?
+				if (restoreScene !== '') {
+					action.scene = restoreScene;
+				} else {
+					action.on = false;
+				}
+				
+				// update group state cache
+				groupState.lastSceneId = restoreScene;
 			} else {				// turn scene on
 				action.scene = sceneId;
+				// update group state cache
+				groupState.lastSceneId = sceneId;
+			}
+			
+			groupState.sceneActive = !groupState.sceneActive;
+			
+			if (transitionTime > 0) {
+				action.transitiontime = transitionTime;
 			}
 			
 			// perform request
 			performGroupStateAction(action, groupId)
 			.then((result) => {
-				
+				currentGroupStates[groupId] = groupState;
 				// push new status to dashboard
-				const newStatusText = currentStateAllOn ? 'ON' : 'OFF';
+				const newStatusText = groupState.sceneActive ? 'OFF' : 'ON';
 				for (var i = 0; i < widgetIdsToPush.length; i++) {
 					console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Pushing new hue state (' + newStatusText + ') to widget id : ' + widgetIdsToPush[i]);
 					misc.pushDataToDashboardWidget('Hue', widgetIdsToPush[i], newStatusText, 'Text');
 				}
 				
 				const response = {
-					last_state: currentStateAllOn,
+					new_group_state: groupState,
 					new_state_response: result
 				}
 				res.send(response);
