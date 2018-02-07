@@ -61,4 +61,7 @@ typings/
 .dist/
 .bin/
 
-backend/config/database.js
+backend/config/*
+.vs/
+*.njsproj
+*.sln
