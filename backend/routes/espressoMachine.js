@@ -87,16 +87,15 @@ router.post('/machine/:name/state/toggle', function (req, res, next) {
 	
 	console.log('[Espresso]:\trouter.post(\'/machine/:name/state/toggle\', function(req, res, next) - Toggle machine state');
 	
-	power.getPowerForPlug(config.espressoPlugName, false)
-	.then((response) => {
-		const powerWattage = response.response.power;
+	isEspressoMachineOn()
+	.then((machineInOn) => {
 		
-		// machine is on if the plug uses more than 0.5 watts
-		const machineInOn = powerWattage > 0.5;
-		
+		// turn on/off machine
 		power.updatePlugState(config.espressoPlugName, !machineInOn)
 		.then((response) => {
 			const newStatusText = machineInOn ? 'OFF' : 'ON';
+			
+			// push the new state to the widgets
 			for (var i = 0; i < widgetIdsToPush.length; i++) {
 				console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Pushing new hue state (' + newStatusText + ') to widget id : ' + widgetIdsToPush[i]);
 				misc.pushDataToDashboardWidget('Espresso', widgetIdsToPush[i], newStatusText, 'Text');
@@ -119,6 +118,25 @@ router.post('/machine/:name/state/countdown/:seconds', function (req, res, next)
 	const timeToToggle = parseInt(req.params.seconds);
 	initializeMachineTurnOffCountdown(timeToToggle);
 	res.status(200).send({seconds: turnOffMachineInXSeconds});
+});
+
+router.get('/machine/:name/state/countdown/', function (req, res, next) {
+	res.status(200).send({seconds: turnOffMachineInXSeconds});
+});
+
+router.get('/machine/:name/state/', function (req, res, next) {
+	if (turnOffMachineInXSeconds > 0) {
+		res.status(200).send({state: true});
+	} else {
+		isEspressoMachineOn()
+		.then((isMachineOn) => {
+			res.status(200).send({state: isMachineOn});
+		})
+		.catch(function (err) {
+			console.error('[Espresso]:\trouter.get(\'/machine/:name/state/\', function(req, res, next) - Could not get plug state for espresso machine. Error: ' + err);
+			res.status(500).send({error: err, message: 'Could not get plug state.'});
+		});
+	}
 });
 
 
@@ -262,6 +280,22 @@ const turnMachineOffAgain = function () {
 	} else {
 		console.log('[Espresso]:\tMachine should be turned off but there is still countdown remaining');
 	}
+}
+
+function isEspressoMachineOn() {
+	return new Promise(function (resolve, reject) {
+		power.getPowerForPlug(config.espressoPlugName, false)
+		.then((response) => {
+			const powerWattage = response.response.power;
+			
+			// machine is on if the plug uses more than 0.5 watts
+			resolve(powerWattage > 0.5);
+		})
+		.catch(function (err) {
+			console.error('[Espresso]:\tisEspressoMachineOn() - Could not get plug state. Error: ' + err);
+			reject(err);
+		});
+	});
 }
 
 function getNumberOfEspressosThisWeek(espressoList) {
