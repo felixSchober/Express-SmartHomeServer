@@ -220,10 +220,10 @@ function initializeMachineTurnOffCountdown(inXSeconds) {
 	// has the countdown not been initialized yet?
 	if (turnOffMachineInXSeconds === -1) {
 		turnOffMachineInXSeconds = inXSeconds;
+		machineTurnOffCountdown();
 	} else {
 		turnOffMachineInXSeconds += inXSeconds;
 	}
-	machineTurnOffCountdown();
 }
 
 function machineTurnOffCountdown() {
