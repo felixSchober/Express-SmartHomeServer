@@ -78,7 +78,6 @@ router.put('/machine/:name/espresso', function (req, res, next) {
 	});
 })
 
-
 router.post('/machine/:name/state/toggle', function (req, res, next) {
 	const machineName = req.params.name;
 	
@@ -121,7 +120,11 @@ router.post('/machine/:name/state/countdown/:seconds', function (req, res, next)
 });
 
 router.get('/machine/:name/state/countdown/', function (req, res, next) {
-	res.status(200).send({seconds: turnOffMachineInXSeconds});
+	let countdownState = turnOffMachineInXSeconds;
+	if (countdownState <= 0) {
+		countdownState = 0;
+	}
+	res.status(200).send({seconds: countdownState});
 });
 
 router.get('/machine/:name/state/', function (req, res, next) {
