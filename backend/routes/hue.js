@@ -104,7 +104,7 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 			const data = result.data;
 			
 			// try to find the group state from the cached group state
-			if (currentGroupStates === undefined || currentGroupStates == null) {
+			if (currentGroupStates[groupId] === undefined) {
 				console.log('[Hue]:\trouter.post(\'/groups/:groupId/scenes/:sceneId/toggle\', function(req, res, next) - Group ' + groupId + ' is new.');
 				
 				// group state was not found -> create it and set initial state
