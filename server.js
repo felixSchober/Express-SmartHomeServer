@@ -67,9 +67,28 @@ app.use('*', index);
 
 const server = http.createServer(app);
 
+// socket setup
+const io = require('socket.io')(server);
+
+
+io.on('connection', (socket) => {
+	console.log('Client connected...');
+	
+	socket.on('disconnect', function(){
+		console.log('user disconnected');
+	});
+	
+	socket.on('message', (message) => {
+		console.log("Message Received: " + message);
+		io.emit('message', {type:'new-message', text: message});
+	});
+	
+	
+});
 
 server.listen(port, function () {
 	console.log('HTTP server listening at http://%s:%s', '127.0.0.1', port);
 });
+
 
 module.exports = app;
