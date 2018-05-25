@@ -74,6 +74,12 @@ const io = require('socket.io')(server);
 io.on('connection', (socket) => {
 	console.log('Client connected...');
 	
+	io.emit('welcome', {});
+	
+	setInterval(function () {
+		io.emit('message', {topic: 'A', data: Math.random() * 100});
+	}, 5000);
+	
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
 	});
