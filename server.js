@@ -4,15 +4,24 @@ const port = process.env.PORT || 3000;
 
 const http = require('http');
 const path = require('path');
-
-
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const morgan = require('morgan');
-
 const agenda = require('./backend/recurringUpdates');
+
+// add string format capability
+if (!String.prototype.format) {
+	String.prototype.format = function() {
+		let args = arguments;
+		return this.replace(/{(\d+)}/g, function(match, number) {
+			return typeof args[number] !== 'undefined'
+					? args[number]
+					: match
+					;
+		});
+	};
+}
 
 // Routes
 const index = require('./backend/routes/index');
@@ -35,7 +44,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'dist')));
-app.use(morgan('dev'));
 // Routes
 
 /* catch 404 and forward to error handler
@@ -77,7 +85,9 @@ io.on('connection', (socket) => {
 	io.emit('welcome', {});
 	
 	setInterval(function () {
+		io.emit('message', {topic: 'TestTemperatureWidget1', data: Math.random() * 100});
 		io.emit('message', {topic: 'A', data: Math.random() * 100});
+		
 	}, 5000);
 	
 	socket.on('disconnect', function(){
