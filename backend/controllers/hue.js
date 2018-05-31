@@ -5,6 +5,7 @@ const request = require('request');
 const misc = require('../misc');
 const hueConfig = require('./../config/hue');
 
+const pollLightStateEveryXSeconds = 10;
 
 // scene cache
 // there is no way to get the active scene from the hue api. So to be able to toggle scenes we have keep track of
@@ -218,3 +219,4 @@ module.exports.getLights = getLights;
 module.exports.getSensors = getSensors;
 module.exports.getSensorTemperature = getSensorTemperature;
 module.exports.toggleScene = toggleScene;
+module.exports.pollLightStateEveryXSeconds = pollLightStateEveryXSeconds;
