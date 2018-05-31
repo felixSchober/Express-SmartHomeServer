@@ -23,6 +23,9 @@ if (!String.prototype.format) {
 	};
 }
 
+// socket
+const powerSocket = require('./backend/socket/power');
+
 // Routes
 const index = require('./backend/routes/index');
 const espressoMachine = require('./backend/routes/espressoMachine');
@@ -84,11 +87,17 @@ io.on('connection', (socket) => {
 	
 	io.emit('welcome', {});
 	
+	// set up socket modules
+	powerSocket.socketActor(io);
+	powerSocket.socketObserver(socket, io);
+	
+	/*
 	setInterval(function () {
 		io.emit('message', {topic: 'TestTemperatureWidget1', data: Math.random() * 100});
 		io.emit('message', {topic: 'A', data: Math.random() * 100});
 		
 	}, 5000);
+	*/
 	
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
@@ -96,10 +105,8 @@ io.on('connection', (socket) => {
 	
 	socket.on('message', (message) => {
 		console.log("Message Received: " + message);
-		io.emit('message', {type:'new-message', text: message});
+		//io.emit('message', {type:'new-message', text: message});
 	});
-	
-	
 });
 
 server.listen(port, function () {
