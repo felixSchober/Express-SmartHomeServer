@@ -206,3 +206,4 @@ router.get('/lights/powerState/history', function(req, res, next) {
 
 
 module.exports = router;
+module.exports.routePath = 'power';

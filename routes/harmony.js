@@ -84,3 +84,4 @@ router.post('/tv/channel/:channelName', function (req, res) {
 });
 
 module.exports = router;
+module.exports.routePath = 'harmony';
