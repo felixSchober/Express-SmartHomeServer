@@ -3,6 +3,8 @@ const controller = require('../controllers/power');
 const socketController = require('../controllers/socket');
 
 const socketModuleIdentifier = 'plugState';
+module.exports.socketName = 'Power';
+
 
 module.exports.socketActor = function (io) {
 	socketController.log(io, '[Power] Socket Actor is initializing.', false);
@@ -15,10 +17,12 @@ module.exports.socketActor = function (io) {
 	// register events to send messages if the plug state changes
 	monitorPlugStates(io);
 	
+	return powerUpdate;
+}
+
+module.exports.sendInitialState = function(io) {
 	// send the current state of all plugs so that the status is displayed correctly in the dashboard
 	sendInitialPlugStates(io);
-	
-	return powerUpdate;
 }
 
 module.exports.addSocketObserver = function (socket, io) {
@@ -48,8 +52,8 @@ function monitorPlugStates(io) {
 	// get plugs
 	const plugNames = controller.powerElements.plugs;
 	for (const name of plugNames) {
-		const powerOn = () => socketController.send(io, 'plugState_' + name, 1);
-		const powerOff = () => socketController.send(io, 'plugState_' + name, 0);
+		const powerOn = () => socketController.send(io, socketModuleIdentifier + '_' + name, 1);
+		const powerOff = () => socketController.send(io, socketModuleIdentifier + '_' + name, 0);
 		controller.registerPlugPowerEvent(name, powerOn, powerOff);
 	}
 }
@@ -58,7 +62,7 @@ function sendInitialPlugStates(io) {
 	const plugNames = controller.powerElements.plugs;
 	for (const name of plugNames) {
 		controller.isPlugRelayOn(name)
-		.then((isOn) => socketController.send(io, 'plugState_' + name, isOn))
+		.then((isOn) => socketController.send(io, socketModuleIdentifier + '_' + name, isOn))
 		.catch((err) => socketController.log(io, '[Power] Could not get initial plug state for plug '
 				+ name + '. Error: ' + err, true));
 	}

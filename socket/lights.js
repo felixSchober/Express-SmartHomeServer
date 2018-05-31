@@ -3,72 +3,89 @@ const controller = require('../controllers/hue');
 const socketController = require('../controllers/socket');
 
 const socketModuleIdentifier = 'lightState';
+module.exports.socketName = 'Lights';
 
 module.exports.socketActor = function (io) {
 
-	const powerUpdate = schedule
+	const lightUpdate = schedule
 	.scheduleJob('*/' + controller.pollLightStateEveryXSeconds + ' * * * * *', function () {
-		//sendPowerUpdates(io);
+		sendLightStateUpdates(io);
 	});
-	
-	// register events to send messages if the plug state changes
-	monitorLightStates(io);
-	
-	// send the current state of all plugs so that the status is displayed correctly in the dashboard
+
+	return lightUpdate;
+}
+
+module.exports.sendInitialState = function(io) {
+	// send the initial state of all lights so that the status is displayed correctly in the dashboard
 	sendInitialLightStates(io);
-	
-	return powerUpdate;
 }
 
 module.exports.addSocketObserver = function (socket, io) {
+	
+	// LIGHT EVENTS
 	socket.on(socketModuleIdentifier, (command) => {
-		// get name of plug and desired state
+		// get name of light and desired state
 		if (!command || !command.name || !command.state) {
-			const logMessage = '[Power] Received plug change command via socket but message is invalid';
+			const logMessage = '[Lights] Received light change command via socket but message is invalid';
 			socketController.log(io, logMessage, false);
 			return;
 		}
 		let pr;
 		if (command.state === 'toggle') {
-			pr = controller.togglePlugState(command.name);
+			pr = controller.toggleLightState(command.name);
 		} else {
 			const state = command.state === 'on'
-			pr = controller.updatePlugState(command.name, state);
+			pr = controller.setLightState(command.name, state);
 		}
 		
 		pr.then((newState) => socketController.log(io,
-				'[Power] State change successful. New State for plug ' + command.name + ': ' + newState, false)
+				'[Lights] State change successful. New State for Light ' + command.name + ': ' + newState, false)
 		).catch((err) => socketController.log(io,
-				'[Power] State change NOT successful. Plug ' + command.name + ' - Error: ' + err, true));
+				'[Lights] State change NOT successful. Light Name ' + command.name + ' - Error: ' + err, true));
+	});
+	
+	// SCENE EVENTS
+	socket.on(socketModuleIdentifier + '_scene', (command) => {
+		// get name of light and desired state
+		if (!command || !command.name || !command.state || !command.groupId || !command.sceneId) {
+			const logMessage = '[Lights] Received scene change command via socket but message is invalid';
+			socketController.log(io, logMessage, false);
+			return;
+		}
+		let pr;
+		if (command.state === 'toggle') {
+			pr = controller.toggleScene(command.groupId, command.sceneId, true, 1000);
+		} else {
+			const state = command.state === 'on'
+			pr = controller.setLightState(command.name, state);
+		}
+		
+		pr.then((newState) => socketController.log(io,
+				'[Lights] State change successful. New State for Light ' + command.name + ': ' + newState, false)
+		).catch((err) => socketController.log(io,
+				'[Lights] State change NOT successful. Light Name ' + command.name + ' - Error: ' + err, true));
 	});
 }
 
-function monitorLightStates(io) {
-	//
+function sendLightStateUpdates(io) {
+	controller.getCachedLightStateIfPossible()
+	.then((result) => sendLightState(io, result))
+	.catch((err) => socketController.log(io, 'Could not get light states ' + err, true));
 }
 
 function sendInitialLightStates(io) {
-	//
-}
-
-function sendLightUpdates(io) {
 	controller.getLights()
-	.then((lights) => {
-	
-	})
-	.catch((err) => {
-		socketController.log(io, 'Could not power history entries. Error: ' + err);
-	});
+	.then((result) => sendLightState(io, result))
+	.catch((err) => socketController.log(io, 'Could not get initial light states ' + err, true));
 }
 
-function formatForDashboard(powerCache, deviceIndexName) {
-	const powerHistoryValues = powerCache.powerHistories[deviceIndexName];
-	let timeStamps = powerCache.timestamps;
+function sendLightState(io, lightStates) {
+	socketController.send(io, socketModuleIdentifier + '_CountTotal', lightStates.lightsCount);
+	socketController.send(io, socketModuleIdentifier + '_CountOn', lightStates.lightsOnCount);
+	socketController.send(io, socketModuleIdentifier + '_CountOff', lightStates.lightsOffCount);
 	
-	return {
-		name: deviceIndexName,
-		labels: timeStamps,
-		values: powerHistoryValues
-	};
+	// send individual light states
+	for(const l of lightStates.lights){
+		socketController.send(io, socketModuleIdentifier + '_' + l.name, l.stateOn);
+	}
 }
-

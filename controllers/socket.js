@@ -21,7 +21,7 @@ const log = function (io, logMessage, isError) {
 
 // This function is used as the socket io handler. The way it is setup it will get the io reference when the function
 // is requested and the socket reference when the socket is created.
-module.exports.getSocketHandler = function (io) {
+module.exports.getSocketHandler = function (io, socketModules) {
 	return function (socket) {
 		
 		const handshake = socket.handshake;
@@ -40,6 +40,16 @@ module.exports.getSocketHandler = function (io) {
 			socketModule.addSocketObserver(socket, io);
 			console.log('\t[Socket] Socket Observer from {0} initialized.'.format(file));
 		});
+		
+		// send initial states
+		sendInitialStates(io, socketModules);
+	}
+}
+
+function sendInitialStates(io, socketModules) {
+	for (const sm of socketModules) {
+		sm.sendInitialState(io);
+		console.log('\t[Socket] Socket {0} is sending initial state to dashboard.'.format(sm.socketName));
 	}
 }
 
