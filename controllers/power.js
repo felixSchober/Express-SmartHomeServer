@@ -1,5 +1,3 @@
-const request = require('request');
-const misc = require('../misc');
 const hue = require('./hue');
 const hueConfig = require('./../config/hue');
 const { Client } = require('tplink-smarthome-api');
@@ -60,7 +58,6 @@ function generateInitialTimestamps() {
 		const secondsToSubtract = (i) * energyHistoryUpdateEveryXSeconds;
 		const ts = moment().subtract(secondsToSubtract, 'seconds');
 		result.push(ts);
-		console.log('Subtract {0} seconds = {1}'.format(secondsToSubtract, ts.format()));
 	}
 	return result;
 }
@@ -244,7 +241,7 @@ const getAggregatedPowerLevelForLightsThatContributeToTotalPower = function () {
 		.then((lights) => {
 			// get lights that contribute to the total power level that are not already counted by the plugs
 			let totalPower = 0.0
-			for (var i = 0; i < lights.length; i++) {
+			for (let i = 0; i < lights.length; i++) {
 				if (lightsThatCountTowardsTotal.indexOf(lights[i].id) !== -1) {
 					totalPower += lights[i].power;
 				}
@@ -264,7 +261,7 @@ const getAggregatedPowerLevelForLights = function () {
 		.then((lights) => {
 			// get lights that contribute to the total power level that are not already counted by the plugs
 			let totalPower = 0.0
-			for (var i = 0; i < lights.length; i++) {
+			for (let i = 0; i < lights.length; i++) {
 				totalPower += lights[i].power;
 			}
 			resolve(totalPower);
@@ -352,6 +349,8 @@ const updatePlugState = function (plugName, stateOn) {
 		
 		client.getDevice({host: powerElements[plugName]})
 		.then((device) => {
+			// do not wait for promise to complete
+			//noinspection JSIgnoredPromiseFromCall
 			device.setPowerState(stateOn);
 			resolve({stateOn: stateOn});
 		})
@@ -398,7 +397,7 @@ module.exports.getPowerForPlug = getPowerForPlug;
 module.exports.updatePlugState = updatePlugState;
 module.exports.energyHistoryEntriesPerHour = energyHistoryEntriesPerHour;
 module.exports.energyHistoryUpdateEveryXSeconds = energyHistoryUpdateEveryXSeconds;
-module.exports.savePowerStateToDb = savePowerStateToDb
+// module.exports.savePowerStateToDb = savePowerStateToDb - do not save anymore
 module.exports.lastPowerStateBuffer = lastPowerStateBuffer;
 module.exports.getRawPlugState = getRawPlugState;
 module.exports.isPlugRelayOn = isPlugRelayOn;
