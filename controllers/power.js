@@ -54,12 +54,11 @@ const lastPowerStateBuffer = {
 
 function generateInitialTimestamps() {
 	const result = [];
-	const now = moment();
 	
 	// generate the oldest entry first
 	for(let i = energyHistoryEntriesPerHour; i > 0; i--) {
 		const secondsToSubtract = (i) * energyHistoryUpdateEveryXSeconds;
-		const ts = now.subtract(secondsToSubtract, 'seconds');
+		const ts = moment().subtract(secondsToSubtract, 'seconds');
 		result.push(ts);
 		console.log('Subtract {0} seconds = {1}'.format(secondsToSubtract, ts.format()));
 	}
