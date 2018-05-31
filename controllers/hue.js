@@ -1,16 +1,26 @@
-const express = require('express');
-const path = require('path');
-const http = require('http');
-const request = require('request');
 const misc = require('../misc');
 const hueConfig = require('./../config/hue');
-
+const moment = require('moment');
 const pollLightStateEveryXSeconds = 10;
 
 // scene cache
 // there is no way to get the active scene from the hue api. So to be able to toggle scenes we have keep track of
 // scenes we active.
 const currentGroupStates = {};
+
+const lightStateCache = {
+	lastRefreshed: new Date(0),
+	lightsCount: -1,
+	lightsOnCount:-1,
+	lightsOffCount: -1,
+	lights: [],
+	lightsOn: [],
+	lightsOff: []
+};
+
+let lightNameIdMapping = {
+
+};
 
 const performGroupStateAction = function (newGroupState, group) {
 	return new Promise(function (resolve, reject) {
@@ -69,10 +79,11 @@ const getSensorTemperature = function (motionSensorName) {
 
 const getLights = function () {
 	return new Promise(function (resolve, reject) {
-		
 		// get the lights from the HUE rest api
 		doHueGetRequest('lights').then((result) => {
 			const data = result.data;
+			
+			lightNameIdMapping = {};
 			
 			const keys = Object.keys(data);
 			const lights = [];
@@ -81,15 +92,15 @@ const getLights = function () {
 			
 			for (let i = 0; i < keys.length; i++) {
 				const key = keys[i];
-				console.log('[Hue]:\tLight ID ' + key);
 				
+				lightNameIdMapping[data[key].name] = key;
 				const light = {
 					id: key,
 					stateOn: data[key].state.on,
 					bri: data[key].state.bri,
 					name: data[key].name,
 					type: data[key].type,
-					id: data[key].uniqueid
+					uniqueId: data[key].uniqueid
 				};
 				
 				if (light.stateOn) lights_on.push(light);
@@ -106,6 +117,8 @@ const getLights = function () {
 				lightsOff: lights_off
 			}
 			
+			refreshCache(lightsResult);
+			
 			resolve(lightsResult);
 			
 		})
@@ -113,6 +126,94 @@ const getLights = function () {
 			console.error('[Hue]:\tgetLights() - Error: ' + err);
 			reject(err);
 		});
+	});
+}
+
+function refreshCache(newData) {
+	lightStateCache.lastRefreshed = moment();
+	lightStateCache.lights = newData.lights;
+	lightStateCache.lightsOff = newData.lightsOff;
+	lightStateCache.lightsOn = newData.lightsOn;
+	lightStateCache.lightsCount = newData.lightsCount;
+	lightStateCache.lightsOnCount = newData.lightsOnCount;
+	lightStateCache.lightsOffCount = newData.lightsOffCount;
+}
+
+const getSingleLight = function (lightName) {
+	return new Promise((resolve, reject) => {
+		const lightId = lightNameIdMapping[lightName];
+		if (!lightId) {
+			reject('Could not find light id for name ' + lightName);
+			return;
+		}
+		
+		doHueGetRequest('light/' + lightId)
+		.then((result) => {
+			const light = {
+				id: lightId,
+				stateOn: result.state.on,
+				bri: result.state.bri,
+				name: result.name,
+				type: result.type,
+				uniqueId:result.uniqueid
+			};
+			resolve(light);
+		})
+		.catch((err) => {
+			console.error('[Hue]:\tgetSingleLight(' + lightName + ') - Could not complete request Error: ' + err);
+			reject(err);
+		});
+	});
+}
+
+const getCachedLightStateIfPossible = function () {
+	const now = moment();
+	const timeDiff = now.diff(lightStateCache.lastRefreshed, 'seconds');
+	return new Promise((resolve, reject) => {
+		if (timeDiff > 15) {
+			// we need to get the lights from the bridge because the cache is too old
+			getLights()
+			.then((result) => resolve(result))
+			.catch((err) => reject(err));
+		} else {
+			resolve(lightStateCache);
+		}
+	})
+	
+}
+
+const setLightState = function (lightName, state) {
+	return new Promise((resolve, reject) => {
+		const lightId = lightNameIdMapping[lightName];
+		if (!lightId) {
+			reject('Could not find light id for name ' + lightName);
+			return;
+		}
+		
+		const path = 'lights/' + lightId + '/state';
+		const reqBody = {
+			on: state,
+			bri: 254
+		}
+		doHuePutRequest(path, reqBody)
+		.then((result) => {
+			console.log('[Hue]:\tsetLightState(' + lightId + ', ' + state + ') - Performed request to hue API');
+			resolve(state);
+		})
+		.catch((err) => {
+			console.error('[Hue]:\tsetLightState(' + lightId + ', ' + state + ') - Could not complete hue action change request: ' + err);
+			reject(err);
+		});
+	});
+}
+
+const toggleLightState = function (lightName) {
+	// get current state
+	return new Promise((resolve, reject) => {
+		getSingleLight(lightName).then((light) => {
+			console.log('[Hue] Toggle Light {0}. Is On: {1}'.format(lightName, light.stateOn));
+			setLightState(lightName, !light.stateOn).then((result) => resolve(result)).catch((err) => reject(err));
+		}).catch((err) => reject(err));
 	});
 }
 
@@ -202,7 +303,7 @@ function doHuePutRequest(path, body) {
 		method: 'PUT',
 		json: body
 	}
-	return misc.performRequest(options, '[HUE]', true, true);
+	return misc.performRequest(options, '[HUE]', false, true);
 }
 
 function doHueGetRequest(path) {
@@ -210,7 +311,7 @@ function doHueGetRequest(path) {
 		uri: 'http://' + hueConfig.hueIp + ':80/api/' + hueConfig.hueUser + '/' + path,
 		method: 'GET'
 	}
-	return misc.performRequest(options, '[HUE]', true, true);
+	return misc.performRequest(options, '[HUE]', false, true);
 }
 
 module.exports.currentGroupStates = currentGroupStates;
@@ -220,3 +321,6 @@ module.exports.getSensors = getSensors;
 module.exports.getSensorTemperature = getSensorTemperature;
 module.exports.toggleScene = toggleScene;
 module.exports.pollLightStateEveryXSeconds = pollLightStateEveryXSeconds;
+module.exports.getCachedLightStateIfPossible = getCachedLightStateIfPossible;
+module.exports.setLightState = setLightState;
+module.exports.toggleLightState = toggleLightState;
