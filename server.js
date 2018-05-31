@@ -8,7 +8,7 @@ const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const agenda = require('./backend/recurringUpdates');
+const agenda = require('./recurringUpdates');
 
 // add string format capability
 if (!String.prototype.format) {
@@ -24,17 +24,9 @@ if (!String.prototype.format) {
 }
 
 // socket
-const powerSocket = require('./backend/socket/power');
+const powerSocket = require('./socket/power');
 
-// Routes
-const index = require('./backend/routes/index');
-const espressoMachine = require('./backend/routes/espressoMachine');
-const hue = require('./backend/routes/hue');
-const harmony = require('./backend/routes/harmony');
-const power = require('./backend/routes/power');
-const calendar = require('./backend/routes/calendar');
-const mvg = require('./backend/routes/mvg');
-const database = require('./backend/config/database');
+const database = require('./config/database');
 
 // mongoose setup
 database.connect(database.remoteUrl);
@@ -47,39 +39,23 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'dist')));
-// Routes
 
-/* catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+// Load routes
+require('fs').readdirSync(__dirname + '/routes').forEach((file) => {
+	const r = require('{0}/routes/{1}'.format(__dirname, file));
+	const path = '/api/' + r.routePath;
+	app.use(path, r);
+	console.log('Add route: ' + path);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-*/
-app.use('/api/espresso', espressoMachine);
-app.use('/api/hue', hue)
-app.use('/api/harmony', harmony);
-app.use('/api/power', power);
-app.use('/api/calendar', calendar);
-app.use('/api/mvg', mvg);
-app.use('*', index);
 
 const server = http.createServer(app);
 
 // socket setup
 const io = require('socket.io')(server);
+
+// add socket
 
 
 io.on('connection', (socket) => {
@@ -115,3 +91,4 @@ server.listen(port, function () {
 
 
 module.exports = app;
+

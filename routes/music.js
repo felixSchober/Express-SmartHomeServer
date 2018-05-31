@@ -132,3 +132,4 @@ function executeiTunesServerGet(path) {
 	}
 	return misc.performRequest(options, '[iTunes]', true)
 }
+module.exports.routePath = 'music';

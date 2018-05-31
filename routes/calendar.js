@@ -72,3 +72,4 @@ router.get('/events/tomorrow/count', function(req, res, next) {
 
 
 module.exports = router;
+module.exports.routePath = 'calendar';

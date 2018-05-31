@@ -140,3 +140,4 @@ function formatCacheToDashboard(lines) {
 }
 
 module.exports = router;
+module.exports.routePath = 'mvg';

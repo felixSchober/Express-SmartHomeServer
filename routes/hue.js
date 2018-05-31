@@ -4,7 +4,6 @@ const path = require('path');
 const http = require('http');
 const request = require('request');
 const misc = require('../misc');
-const hueConfig = require('./../config/hue');
 const controller = require('../controllers/hue');
 
 /* GET all sensors
@@ -71,3 +70,4 @@ router.post('/groups/:groupId/scenes/:sceneId/toggle', function(req, res, next) 
 });
 
 module.exports = router;
+module.exports.routePath = 'hue';
