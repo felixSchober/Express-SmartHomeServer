@@ -58,9 +58,10 @@ function generateInitialTimestamps() {
 	
 	// generate the oldest entry first
 	for(let i = energyHistoryEntriesPerHour; i > 0; i--) {
-		const secondsToSubtract = (i + 1) * energyHistoryUpdateEveryXSeconds;
+		const secondsToSubtract = (i) * energyHistoryUpdateEveryXSeconds;
 		const ts = now.subtract(secondsToSubtract, 'seconds');
 		result.push(ts);
+		console.log('Subtract {0} seconds = {1}'.format(secondsToSubtract, ts.format()));
 	}
 	return result;
 }

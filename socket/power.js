@@ -16,12 +16,12 @@ module.exports.socketActor = function (io) {
 	monitorPlugStates(io);
 	
 	// send the current state of all plugs so that the status is displayed correctly in the dashboard
-	sendIntitialPlugStates(io);
+	sendInitialPlugStates(io);
 	
 	return powerUpdate;
 }
 
-module.exports.socketObserver = function (socket, io) {
+module.exports.addSocketObserver = function (socket, io) {
 	socket.on(socketModuleIdentifier, (command) => {
 		// get name of plug and desired state
 		if (!command || !command.name || !command.state) {
@@ -54,7 +54,7 @@ function monitorPlugStates(io) {
 	}
 }
 
-function sendIntitialPlugStates(io) {
+function sendInitialPlugStates(io) {
 	const plugNames = controller.powerElements.plugs;
 	for (const name of plugNames) {
 		controller.isPlugRelayOn(name)
@@ -79,7 +79,7 @@ function sendPowerUpdates(io) {
 			aggregatedGraph.push(graphValues);
 			
 			socketController.send(io, 'powerLevelValue_' + name, currentPower);
-			socketController.send(io, 'powerLevelHistory_' + name, graphValues);
+			socketController.send(io, 'powerLevelHistory_' + name, [graphValues]);
 		}
 		
 		socketController.send(io, 'powerLevelHistory_Total', aggregatedGraph);
@@ -93,9 +93,15 @@ function formatForDashboard(powerCache, deviceIndexName) {
 	const powerHistoryValues = powerCache.powerHistories[deviceIndexName];
 	let timeStamps = powerCache.timestamps;
 	
+	// convert timestamps to full iso strings
+	const serializedTimestamps = [];
+	for(const ts of timeStamps){
+		serializedTimestamps.push(ts.toISOString(true))
+	}
+	
 	return {
 		name: deviceIndexName,
-		labels: timeStamps,
+		labels: serializedTimestamps,
 		values: powerHistoryValues
 	};
 }

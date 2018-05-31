@@ -161,6 +161,15 @@ const checkIfDateTomorrow = function (d) {
 	return (d.setHours(0, 0, 0, 0) == tomorrow.setHours(0, 0, 0, 0));
 }
 
+const getWelcomeLogMessage = function () {
+	console.log('   _____                      _   _    _                         _____                          ');
+	console.log('  / ____|                    | | | |  | |                       / ____|                         ');
+	console.log(' | (___  _ __ ___   __ _ _ __| |_| |__| | ___  _ __ ___   ___  | (___   ___ _ ____   _____ _ __ ');
+	console.log("  \\___ \\| '_ ` _ \\ / _` | '__| __|  __  |/ _ \\| '_ ` _ \\ / _ \\  \\___ \\ / _ \\ '__\\ \\ / / _ \\ '__|");
+	console.log("  ____) | | | | | | (_| | |  | |_| |  | | (_) | | | | | |  __/  ____) |  __/ |   \\ V /  __/ |   ");
+	console.log(" |_____/|_| |_| |_|\\__,_|_|   \\__|_|  |_|\\___/|_| |_| |_|\\___| |_____/ \\___|_|    \\_/ \\___|_|   ");
+	console.log('\n\n\n');
+}
 
 module.exports.getFirstAndLastDayOfWeek = getFirstAndLastDayOfWeek;
 module.exports.getFirstDayOfCurrentMonth = getFirstDayOfCurrentMonth;
@@ -173,3 +182,4 @@ module.exports.doOpenHabPostRequest = doOpenHabPostRequest;
 module.exports.checkIfDateToday = checkIfDateToday;
 module.exports.checkIfDateTomorrow = checkIfDateTomorrow;
 module.exports.pushDataToDashboardWidget = pushDataToDashboardWidget;
+module.exports.getWelcomeLogMessage = getWelcomeLogMessage;
