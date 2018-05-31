@@ -5,23 +5,22 @@ const socketController = require('../controllers/socket');
 const socketModuleIdentifier = 'lightState';
 
 module.exports.socketActor = function (io) {
-	socketController.log(io, '[Lights] Socket Actor is initializing.', false);
-	
+
 	const powerUpdate = schedule
 	.scheduleJob('*/' + controller.pollLightStateEveryXSeconds + ' * * * * *', function () {
-		sendPowerUpdates(io);
+		//sendPowerUpdates(io);
 	});
 	
 	// register events to send messages if the plug state changes
-	monitorPlugStates(io);
+	monitorLightStates(io);
 	
 	// send the current state of all plugs so that the status is displayed correctly in the dashboard
-	sendIntitialPlugStates(io);
+	sendInitialLightStates(io);
 	
 	return powerUpdate;
 }
 
-module.exports.socketObserver = function (socket, io) {
+module.exports.addSocketObserver = function (socket, io) {
 	socket.on(socketModuleIdentifier, (command) => {
 		// get name of plug and desired state
 		if (!command || !command.name || !command.state) {
@@ -44,24 +43,12 @@ module.exports.socketObserver = function (socket, io) {
 	});
 }
 
-function monitorPlugStates(io) {
-	// get plugs
-	const plugNames = controller.powerElements;
-	for (const name of plugNames) {
-		const powerOn = () => socketController.send(io, 'plugState_' + name, 1);
-		const powerOff = () => socketController.send(io, 'plugState_' + name, 0);
-		controller.registerPlugPowerEvent(name, powerOn, powerOff);
-	}
+function monitorLightStates(io) {
+	//
 }
 
-function sendIntitialPlugStates(io) {
-	const plugNames = controller.powerElements;
-	for (const name of plugNames) {
-		controller.isPlugRelayOn(name)
-		.then((isOn) => socketController.send(io, 'plugState_' + name, isOn))
-		.catch((err) => socketController.log(io, '[Power] Could not get initial plug state for plug '
-				+ name + '. Error: ' + err, true));
-	}
+function sendInitialLightStates(io) {
+	//
 }
 
 function sendLightUpdates(io) {
