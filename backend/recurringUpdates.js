@@ -6,7 +6,7 @@ const moment = require('moment');
 module.exports.pollPowerState = schedule
 	.scheduleJob('*/' + hs110Plugs.energyHistoryUpdateEveryXSeconds + ' * * * * *', function () {
 		console.log('[Schedule] - ' + moment().format() + ':\tStarting power update');
-		hs110Plugs.updatePowerState()
+		//hs110Plugs.updatePowerState()
 });
 
 // save history every hour
