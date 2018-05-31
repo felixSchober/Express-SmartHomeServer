@@ -47,8 +47,24 @@ const lastPowerStateBuffer = {
 		'Computer': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 		'Lights': Array.apply(null, Array(energyHistoryEntriesPerHour)).map(Number.prototype.valueOf, 0),
 	},
-	'powerHistoryKeys': ['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights']
+	'powerHistoryKeys': ['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights'],
+	'timestamps': generateInitialTimestamps()
 }
+
+
+function generateInitialTimestamps() {
+	const result = [];
+	const now = moment();
+	
+	// generate the oldest entry first
+	for(let i = energyHistoryEntriesPerHour; i > 0; i--) {
+		const secondsToSubtract = (i + 1) * energyHistoryUpdateEveryXSeconds;
+		const ts = now.subtract(secondsToSubtract, 'seconds');
+		result.push(ts);
+	}
+	return result;
+}
+
 
 /*
 	###########################
@@ -122,40 +138,47 @@ const updatePowerState = function () {
 	// also push lights promise
 	promises.push(getAggregatedPowerLevelForLights());
 	
-	Promise.all(promises)
-	.then(function (results) {
-		for (let i = 0; i < results.length; i++) {
-			const currentPowerElement = results[i];
-			
-			// if the currentPowerElement has an attribute plugName it's a plug.
-			// otherwise it's a light and we can assume the index to be the last position
-			let powerElementHistoryName = '';
-			let powerLevel = 0;
-			
-			if (typeof currentPowerElement === 'object') {
-				// get current index of plug so that we can save it in the buffer
-				const powerElementIndex = powerElements.plugs.indexOf(currentPowerElement.plugName);
-				if (powerElementIndex !== -1) {
-					lastPowerStateBuffer.powerStates[powerElementIndex] = currentPowerElement.response.power;
+	return new Promise((resolve, reject) => {
+		Promise.all(promises)
+		.then(function (results) {
+			for (let i = 0; i < results.length; i++) {
+				const currentPowerElement = results[i];
+				
+				// if the currentPowerElement has an attribute plugName it's a plug.
+				// otherwise it's a light and we can assume the index to be the last position
+				let powerElementHistoryName = '';
+				let powerLevel = 0;
+				
+				if (typeof currentPowerElement === 'object') {
+					// get current index of plug so that we can save it in the buffer
+					const powerElementIndex = powerElements.plugs.indexOf(currentPowerElement.plugName);
+					if (powerElementIndex !== -1) {
+						lastPowerStateBuffer.powerStates[powerElementIndex] = currentPowerElement.response.power;
+					}
+					powerElementHistoryName = currentPowerElement.plugName;
+					powerLevel = currentPowerElement.response.power
+				} else {
+					powerElementHistoryName = 'Lights';
+					powerLevel = currentPowerElement;
 				}
-				powerElementHistoryName = currentPowerElement.plugName;
-				powerLevel = currentPowerElement.response.power
-			} else {
-				powerElementHistoryName = 'Lights';
-				powerLevel = currentPowerElement;
+				
+				// push to back and remove the first element
+				lastPowerStateBuffer.powerHistories[powerElementHistoryName].push(powerLevel);
+				lastPowerStateBuffer.powerHistories[powerElementHistoryName].shift();
+				
 			}
 			
-			lastPowerStateBuffer.powerHistories[powerElementHistoryName].push(powerLevel);
+			// push to back and remove the first (oldest) element.
+			lastPowerStateBuffer.timestamps.push(moment());
+			lastPowerStateBuffer.timestamps.shift();
 			
-			// if the list becomes to long remove the front of the list
-			if (lastPowerStateBuffer.powerHistories[powerElementHistoryName].length > energyHistoryEntriesPerHour) {
-				lastPowerStateBuffer.powerHistories[powerElementHistoryName].shift()
-			}
-		}
-		console.log('[POWER]:\tPower State update complete')
-	})
-	.catch(function (err) {
-		console.error('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least one plug there was an error while getting the data. Error: ' + err);
+			console.log('[POWER]:\tPower State update complete');
+			resolve(lastPowerStateBuffer);
+		})
+		.catch(function (err) {
+			console.error('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least one plug there was an error while getting the data. Error: ' + err);
+			reject('[POWER]:\tupdatePowerStateAndSaveToDb() - For at least one plug there was an error while getting the data. Error: ' + err);
+		});
 	});
 }
 
@@ -336,10 +359,41 @@ const updatePlugState = function (plugName, stateOn) {
 			console.error('[POWER]:\tupdatePlugState() - Could not get device from HS110 API. Error: ' + err);
 			reject(err);
 		});
+	});
+}
+
+const togglePlugState = function (plugName) {
+	return new Promise(function (resolve, reject) {
+		
+		client.getDevice({host: powerElements[plugName]})
+		.then((device) => {
+			device.togglePowerState()
+			.then((newState) => resolve(newState))
+			.catch((err) => reject(err));
+		})
+		.catch(function (err) {
+			console.error('[POWER]:\ttogglePlugState() - Could not get device from HS110 API. Error: ' + err);
+			reject(err);
+		});
 	})
 }
 
+const registerPlugPowerEvent = function(plugName, callbackOn, callbackOff) {
+	client.getDevice({host: powerElements[plugName]})
+	.then((device) => {
+		device.on('power-on', callbackOn);
+		device.on('power-off', callbackOff);
+		console.log('[Power] registerPlugPowerEvent({0}, {1}, {2}) - registered plug state changes'
+		.format(plugName, callbackOn, callbackOff));
+	})
+	.catch(function (err) {
+		console.error('[POWER]:\tregisterPlugPowerEvent({0}, {1}, {2}) - Could not get device from HS110 API. ' +
+				'Error: {3}'.format(plugName, callbackOn, callbackOff, err));
+	});
+}
+
 module.exports.updatePowerState = updatePowerState;
+module.exports.togglePlugState = togglePlugState;
 module.exports.getPowerForPlug = getPowerForPlug;
 module.exports.updatePlugState = updatePlugState;
 module.exports.energyHistoryEntriesPerHour = energyHistoryEntriesPerHour;
@@ -349,4 +403,5 @@ module.exports.lastPowerStateBuffer = lastPowerStateBuffer;
 module.exports.getRawPlugState = getRawPlugState;
 module.exports.isPlugRelayOn = isPlugRelayOn;
 module.exports.powerElements = powerElements;
+module.exports.registerPlugPowerEvent = registerPlugPowerEvent;
 module.exports.getAggregatedPowerLevelForLightsThatContributeToTotalPower = getAggregatedPowerLevelForLightsThatContributeToTotalPower;
