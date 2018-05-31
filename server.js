@@ -73,22 +73,24 @@ console.log('\n#################################################################
 // SOCKET SETUP
 console.log('######################################### SOCKET #########################################\n')
 const io = require('socket.io')(server);
-const socketHandler = require('./controllers/socket').getSocketHandler(io);
 
 // Load socket actors
-const socketActors = [];
+const socketModules = [];
 fs.readdirSync(__dirname + '/socket').forEach((file) => {
 	const s = require('{0}/socket/{1}'.format(__dirname, file));
 	s.socketActor(io);
-	socketActors.push(s);
+	socketModules.push(s);
 	console.log('Socket Actor {0} initialized.'.format(file));
 });
+
+const socketHandler = require('./controllers/socket').getSocketHandler(io, socketModules);
+
 
 io.on('connection', socketHandler);
 
 console.log('\n##########################################################################################\n\n')
 
-console.log('################################## INITIALISATION FINISHED #################################\n')
+console.log('################################# INITIALISATION FINISHED ################################\n')
 server.listen(port, function () {
 	console.log('HTTP server listening at http://%s:%s', '127.0.0.1', port);
 });

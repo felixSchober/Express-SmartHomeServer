@@ -2,6 +2,7 @@ const schedule = require('node-schedule');
 const moment = require('moment');
 const controller = require('../controllers/calendar');
 const socketController = require('../controllers/socket');
+module.exports.socketName = 'Calendar';
 
 
 module.exports.socketActor = function (io) {
@@ -16,6 +17,10 @@ module.exports.socketActor = function (io) {
 
 module.exports.addSocketObserver = function (socket, io) {
 	// we don't have to listen for events here because we can't do anything (yet) for the calendar anyway.
+}
+
+module.exports.sendInitialState = function(io) {
+	// TODO send intial state for calendar
 }
 
 function sendCalendarEvents(io) {
