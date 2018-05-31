@@ -1,9 +1,6 @@
 const request = require('request');
-const fs = require('fs');
-const readline = require('readline');
 const openHabConfig = require('./config/openhab');
 const moment = require('moment');
-const config = require('./config/misc');
 
 const getFirstAndLastDayOfWeek = function() {
 	let today, todayNumber, mondayNumber, sundayNumber, monday, sunday;
@@ -116,39 +113,6 @@ const doOpenHabPostRequest = function(path, body) {
 	return performRequest(options, '[OPENHAB]', true, false);
 }
 
-const pushDataToDashboardWidget = function (sender, widgetId, data, dataType) {
-	const jsonBody = {
-		'auth_token': config.dashboardApiKey,
-	};
-	
-	if (dataType === "Number") {
-		jsonBody.current = data;
-	} else if (dataType === "Text") {
-		jsonBody.text = data;
-	}
-	
-	const options = {
-		uri: 'http://' + config.dashboardHost + '/widgets/' + widgetId,
-		method: 'POST',
-		json: jsonBody
-	}
-	
-	// we will already await the result here since those operations are not mission critical and would otherwise clutter
-	// the calling code since there are other more important operations there
-	performRequest(options, sender, true, false)
-	.then(function (result) {
-		// everything should look fine here since the dashboard doesn't return anything by default. Just status code 204
-		// even if it didn't work
-		if (result.status === 204) {
-			console.log('[' + sender + ']:\tpushDataToDashboardWidget(' + sender + ', ' + widgetId + ', ' + data + ') - Request successful');
-		} else {
-			console.error('[' + sender + ']:\tpushDataToDashboardWidget(' + sender + ', ' + widgetId + ', ' + data + ') - Request not successful. (Status: ' + result.status + ') Error: ' + result.data);
-		}
-	}).catch(function (err) {
-		console.error('[' + sender + ']:\tpushDataToDashboardWidget(' + sender + ', ' + widgetId + ', ' + data + ') - Could not push data to dashboard. Error: ' + err);
-	});
-}
-
 const checkIfDateToday = function (d) {
 	const today = new Date();
 	return (d.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0));
@@ -181,5 +145,4 @@ module.exports.doOpenHabGetRequest = doOpenHabGetRequest;
 module.exports.doOpenHabPostRequest = doOpenHabPostRequest;
 module.exports.checkIfDateToday = checkIfDateToday;
 module.exports.checkIfDateTomorrow = checkIfDateTomorrow;
-module.exports.pushDataToDashboardWidget = pushDataToDashboardWidget;
 module.exports.getWelcomeLogMessage = getWelcomeLogMessage;
