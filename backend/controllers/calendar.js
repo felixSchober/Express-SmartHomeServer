@@ -5,7 +5,7 @@ const request = require('request');
 const misc = require('../misc');
 const config = require('./../config/calendar');
 const moment = require('moment');
-var icalParser = require('node-ical');
+const icalParser = require('node-ical');
 
 const getEventsFuture = function () {
 	return new Promise((resolve, reject) => {
@@ -51,8 +51,7 @@ const getEventsTomorrow = function () {
 	});
 }
 
-
-function filterPast(eventList) {
+const filterPast = function(eventList) {
 	return eventList.filter((element) => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -60,13 +59,13 @@ function filterPast(eventList) {
 	});
 }
 
-function filterToday(eventList) {
+const filterToday = function(eventList) {
 	return eventList.filter((element) => {
 		return misc.checkIfDateToday(element.start)
 	});
 }
 
-function filterTomorrow(eventList) {
+const filterTomorrow = function(eventList) {
 	return eventList.filter((element) => {
 		return misc.checkIfDateTomorrow(element.start)
 	});
@@ -98,12 +97,23 @@ function collectEventsFromCalendarURLList(calendarList, convertRecurring, manual
 			}
 			
 			console.log('[CALENDAR]:\tcollectEventsFromCalendarURLList(' + calendarList + ', ' + convertRecurring + ', ' + manualConversion + ') - Found ' + eventList.length + ' events.');
+			
+			// sort events
+			sortEvents(eventList);
 			resolve(eventList);
 		})
 		.catch(function (err) {
 			console.error('[CALENDAR]:\tcollectEventsFromCalendarURLList(' + calendarList + ', ' + convertRecurring + ', ' + manualConversion + ') - Could not get some calendar. Error: ' + err);
 			reject(err);
 		});
+	});
+}
+
+function sortEvents(eventList) {
+	return eventList.sort((e1, e2) => {
+		if (e1.start < e2.start) return -1;
+		if (e1.start > e2.start) return 1;
+		return 0;
 	});
 }
 
@@ -361,3 +371,6 @@ function findMatchingRoomFromRoomMapping(room, roomMapping, editDistanceThreshol
 module.exports.getEventsFuture = getEventsFuture;
 module.exports.getEventsToday = getEventsToday;
 module.exports.getEventsTomorrow = getEventsTomorrow;
+module.exports.filterPast = filterPast;
+module.exports.filterToday = filterToday;
+module.exports.filterTomorrow = filterTomorrow;
