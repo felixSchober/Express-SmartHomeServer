@@ -25,7 +25,7 @@ module.exports.addSocketObserver = function (socket, io) {
 	// LIGHT EVENTS
 	socket.on(socketModuleIdentifier, (command) => {
 		// get name of light and desired state
-		if (!command || !command.name || !command.state) {
+		if (command === null || command.name === null || command.state === null) {
 			const logMessage = '[Lights] Received light change command via socket but message is invalid';
 			socketController.log(io, logMessage, false);
 			return;

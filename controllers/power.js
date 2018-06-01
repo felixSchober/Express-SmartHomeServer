@@ -204,7 +204,7 @@ function getPowerForLights() {
 					if (powerLevel > -1) light.power = powerLevel;
 					else {
 						// get individual power level per device id
-						light.power = hueConfig.lightIdPowerMapping[light.id];
+						light.power = hueConfig.lightIdPowerMapping[light.uniqueId];
 					}
 					if (light.power === undefined || light.power === null) {
 						const err = {
@@ -229,8 +229,8 @@ function getPowerForLights() {
 			}
 		})
 		.catch(function (err) {
-			console.error('[POWER]:\tgetPowerForLights() - Could not get lights from hue module. Error: ' + err);
-			reject(err);
+			console.error('[POWER]:\tgetPowerForLights() - Could not get lights from hue module {0}. Error: {1}'.format(err.light, err.message));
+			reject('Could not get lights from hue module {0}. Error: {1}'.format(err.light, err.message));
 		});
 	});
 }
