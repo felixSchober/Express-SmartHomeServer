@@ -146,16 +146,16 @@ const getSingleLight = function (lightName) {
 			reject('Could not find light id for name ' + lightName);
 			return;
 		}
-		
-		doHueGetRequest('light/' + lightId)
+		const path = 'lights/' + lightId
+		doHueGetRequest(path)
 		.then((result) => {
 			const light = {
 				id: lightId,
-				stateOn: result.state.on,
-				bri: result.state.bri,
-				name: result.name,
-				type: result.type,
-				uniqueId:result.uniqueid
+				stateOn: result.data.state.on,
+				bri: result.data.state.bri,
+				name: result.data.name,
+				type: result.data.type,
+				uniqueId:result.data.uniqueid
 			};
 			resolve(light);
 		})
@@ -193,7 +193,7 @@ const setLightState = function (lightName, state) {
 		const path = 'lights/' + lightId + '/state';
 		const reqBody = {
 			on: state,
-			bri: 254
+			//bri: 254
 		}
 		doHuePutRequest(path, reqBody)
 		.then((result) => {
