@@ -1,8 +1,9 @@
+import {IDeviceController} from '../IDeviceController';
 import {IAggregatedLightResult} from './IAggregatedLightResult';
 import {ILight} from './ILight';
 import {ILightGroupState} from './ILightGroupState';
 
-export interface ILightControllerService {
+export interface ILightControllerService extends IDeviceController {
 	currentGroupStates: { [id: string] : ILightGroupState};
 
 	getSensors(): Promise<any>;

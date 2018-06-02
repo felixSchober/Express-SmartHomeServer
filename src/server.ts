@@ -6,6 +6,23 @@ import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 
+// add string format capability
+interface StringConstructor {
+	format(): string;
+}
+
+
+String.format = function() {
+	let args = arguments;
+	return this.replace(/{(\d+)}/g, function(match, number) {
+		return typeof args[number] !== 'undefined'
+			? args[number]
+			: match
+			;
+	});
+};
+
+
 export class Server {
 
 	public app: express.Application;

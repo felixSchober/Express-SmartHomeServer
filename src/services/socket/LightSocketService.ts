@@ -1,5 +1,4 @@
 import {IAggregatedLightResult} from '../../interfaces/Devices/IAggregatedLightResult';
-import {ILight} from '../../interfaces/Devices/ILight';
 import {ILightControllerService} from '../../interfaces/Devices/ILightControllerService';
 import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
@@ -17,18 +16,6 @@ export class LightSocketService extends BaseSocketService {
 	            controller: IDeviceController,
 	            socketController: ISocketController) {
 		super(socketName, io, pollingInterval, socketMessageIdentifier, controller, socketController);
-	}
-
-	public initializeSocketActor(): Job{
-		const rule = new RecurrenceRule('*',
-			'*',
-			'*',
-			'*',
-			'*',
-			'*',
-			'*/' + this.pollingInterval);
-
-		return scheduleJob(rule, this.sendUpdates);
 	}
 
 	public sendInitialState() {

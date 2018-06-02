@@ -1,5 +1,7 @@
+import {Moment} from 'moment';
+
 export interface ISocketLogMessage {
-	time: string;
+	time: Moment;
 	message: string;
 	isError: boolean;
 }

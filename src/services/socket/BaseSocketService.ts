@@ -1,4 +1,4 @@
-import {Job} from 'node-schedule';
+import {Job, RecurrenceRule, scheduleJob} from 'node-schedule';
 import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
 import {ISocketService} from '../../interfaces/ISocketService';
@@ -25,9 +25,20 @@ export abstract class BaseSocketService implements ISocketService {
 		this.sockets = [];
 	}
 
+	public initializeSocketActor(): Job{
+		const rule = new RecurrenceRule('*',
+			'*',
+			'*',
+			'*',
+			'*',
+			'*',
+			'*/' + this.pollingInterval);
+
+		return scheduleJob(rule, this.sendUpdates);
+	}
+
 	protected abstract addSocketObserver(socket: Socket);
 
-	protected abstract initializeSocketActor(): Job;
 
 	protected abstract sendInitialState();
 

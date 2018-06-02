@@ -308,7 +308,7 @@ function copyEvent(event) {
 	};
 }
 
-function convertFuckingDateSoThatGoogleCanEatShit(d, manualConversion) {
+function DateconvertFuckingDateSoThatGoogleCanEatShit(d, manualConversion) {
 	// HACKY HACKY
 	if (!manualConversion) return d;
 	const dlsts = moment('10-29-2017 3:00', 'YYYY-MM-DD HH:mm').toDate();

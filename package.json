@@ -48,6 +48,7 @@
     "@types/mongodb": "^3.0.19",
     "@types/mongoose": "^5.0.15",
     "@types/morgan": "^1.7.35",
+    "@types/node": "^10.3.0",
     "babel-core": "^6.25.0",
     "babel-loader": "^6.4.1",
     "grunt": "^1.0.2",
