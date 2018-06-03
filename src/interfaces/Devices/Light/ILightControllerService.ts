@@ -1,10 +1,11 @@
-import {IDeviceController} from '../IDeviceController';
+import {IDeviceController} from '../../IDeviceController';
 import {IAggregatedLightResult} from './IAggregatedLightResult';
 import {ILight} from './ILight';
 import {ILightGroupState} from './ILightGroupState';
+import {ILightSceneState} from './ILightSceneState';
 
 export interface ILightControllerService extends IDeviceController {
-	currentGroupStates: { [id: string] : ILightGroupState};
+	currentGroupStates: { [p: string]: ILightSceneState };
 
 	getSensors(): Promise<any>;
 	getSensorTemperature(sensorId: string): Promise<number>
@@ -16,5 +17,5 @@ export interface ILightControllerService extends IDeviceController {
 	toggleLightState(lightName: string): Promise<boolean>;
 
 	performGroupStateAction(newGroupState: ILightGroupState, groupId: string): Promise<any>;
-	toggleScene(groupId: string, sceneId: string, restoreScene: boolean, transitionTime: number): Promise<boolean>
+	toggleScene(groupId: string, sceneId: string, restoreSceneId: string, transitionTime: number): Promise<ILightSceneState>;
 }

@@ -1,6 +1,6 @@
 import {Server, Socket} from 'socket.io';
 import {ICalendarControllerService} from '../../interfaces/Devices/ICalendarControllerService';
-import {ICalendarEvent} from '../../interfaces/ICalendarEvent';
+import {ICalendarEvent} from '../../interfaces/Devices/Calendar/ICalendarEvent';
 import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
 import {BaseSocketService} from './BaseSocketService';

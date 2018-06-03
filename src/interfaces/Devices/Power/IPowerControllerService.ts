@@ -1,5 +1,5 @@
 import {Double} from 'bson';
-import {IDeviceController} from '../IDeviceController';
+import {IDeviceController} from '../../IDeviceController';
 import {IPlug} from './IPlug';
 import {IPowerLight} from './IPowerLight';
 import {IPowerState} from './IPowerState';

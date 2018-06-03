@@ -1,4 +1,4 @@
-import {ICalendarEvent} from '../ICalendarEvent';
+import {ICalendarEvent} from './Calendar/ICalendarEvent';
 import {IDeviceController} from '../IDeviceController';
 
 export interface ICalendarControllerService extends IDeviceController {

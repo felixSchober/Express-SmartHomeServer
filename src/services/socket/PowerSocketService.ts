@@ -1,7 +1,7 @@
 import {Server, Socket} from 'socket.io';
 import {IGraphValues} from '../../interfaces/Dashboard/IGraphValues';
-import {IPowerControllerService} from '../../interfaces/Devices/IPowerControllerService';
-import {IPowerState} from '../../interfaces/Devices/IPowerState';
+import {IPowerControllerService} from '../../interfaces/Devices/Power/IPowerControllerService';
+import {IPowerState} from '../../interfaces/Devices/Power/IPowerState';
 import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../interfaces/ISwitchStateChangeCommand';

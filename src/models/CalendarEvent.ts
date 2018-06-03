@@ -1,4 +1,4 @@
-import {ICalendarEvent, ICalendarRepeatingFrequency} from '../interfaces/ICalendarEvent';
+import {ICalendarEvent, ICalendarRepeatingFrequency} from '../interfaces/Devices/Calendar/ICalendarEvent';
 
 export class CalendarEvent implements ICalendarEvent{
 
