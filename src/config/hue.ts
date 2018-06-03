@@ -1,9 +1,9 @@
-const userConfig = require('./passwordsAndUsers');
+import {userConfig} from './userConfig';
 
 const hueIp = userConfig.hueIp;
 const hueUser = userConfig.hueUser;
 
-const hueMotionSensorNameIdMapping = {
+const hueMotionSensorNameIdMapping: {[id: string]: number} = {
 	'kitchen': 57,
 	'entrance': 64
 };
@@ -20,10 +20,10 @@ const lightTypePowerMapping = {
 
 const lightsPowerLevelNotScalable = [
 	'On/Off plug-in unit'
-]
+];
 
 // wattage that each of the hue devices needs
-lightIdPowerMapping = {
+const lightIdPowerMapping = {
 	'00:17:88:01:01:23:60:18-0b': 10.0, // IRIS Deckenstrahler
 	'00:17:88:01:00:cb:7d:95-0b': 13.0, // Lightstrip Fenster
 	'84:18:26:00:00:0b:3d:9d-03': 8.0, //Plug Schreibtisch
@@ -33,7 +33,7 @@ lightIdPowerMapping = {
 	'84:18:26:00:00:0c:6f:43-03': 25.0 // Plug Arbeitsplatte
 };
 
-module.exports = {
+export const hueConfig = {
 	hueIp: hueIp,
 	hueUser: hueUser,
 	hueUrl : hueIp + '/api/' + hueUser + '/',

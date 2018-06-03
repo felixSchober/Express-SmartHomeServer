@@ -6,21 +6,21 @@ import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
 
-// add string format capability
-interface StringConstructor {
-	format(): string;
+interface String {
+	format(...replacements: string[]): string;
 }
 
-
-String.format = function() {
-	let args = arguments;
-	return this.replace(/{(\d+)}/g, function(match, number) {
-		return typeof args[number] !== 'undefined'
-			? args[number]
-			: match
-			;
-	});
-};
+if (!String.prototype.format) {
+	String.prototype.format = function() {
+		var args = arguments;
+		return this.replace(/{(\d+)}/g, function(match, number) {
+			return typeof args[number] != 'undefined'
+				? args[number]
+				: match
+				;
+		});
+	};
+}
 
 
 export class Server {

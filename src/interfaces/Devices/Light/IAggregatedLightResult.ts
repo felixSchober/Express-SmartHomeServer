@@ -7,4 +7,5 @@ export interface IAggregatedLightResult {
 	lights: ILight[];
 	lightsOn: ILight[];
 	lightsOff: ILight[];
+	lastRefreshed: Date;
 }

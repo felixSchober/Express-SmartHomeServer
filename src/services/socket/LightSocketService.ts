@@ -1,5 +1,5 @@
-import {IAggregatedLightResult} from '../../interfaces/Devices/IAggregatedLightResult';
-import {ILightControllerService} from '../../interfaces/Devices/ILightControllerService';
+import {IAggregatedLightResult} from '../../interfaces/Devices/Light/IAggregatedLightResult';
+import {ILightControllerService} from '../../interfaces/Devices/Light/ILightControllerService';
 import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../interfaces/ISwitchStateChangeCommand';

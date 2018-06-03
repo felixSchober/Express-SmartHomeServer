@@ -1,8 +1,8 @@
-import {calendar} from '../../config/Calendar';
+import {calendar} from '../../config/calendar';
 import {Helpers} from '../../Helpers';
 import {ICalendarControllerService} from '../../interfaces/Devices/ICalendarControllerService';
-import {ICalendar} from '../../interfaces/ICalendar';
-import {ICalendarEvent} from '../../interfaces/ICalendarEvent';
+import {ICalendar} from '../../interfaces/Devices/Calendar/ICalendar';
+import {ICalendarEvent} from '../../interfaces/Devices/Calendar/ICalendarEvent';
 import * as nodeICal from 'node-ical';
 import * as moment from 'moment';
 import {CalendarEvent} from '../../models/CalendarEvent';
