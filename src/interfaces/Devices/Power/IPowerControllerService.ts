@@ -1,5 +1,5 @@
-import {Double} from 'bson';
 import {IDeviceController} from '../../IDeviceController';
+import {ITuple} from '../../ITuple';
 import {IPlug} from './IPlug';
 import {IPowerLight} from './IPowerLight';
 import {IPowerState} from './IPowerState';
@@ -13,16 +13,16 @@ export interface IPowerControllerService extends IDeviceController {
 
 	updatePowerState(): Promise<IPowerState>;
 	getPowerForLights(): Promise<IPowerLight[]>;
-	getAggregatedPowerLevelForLightsThatContributeToTotalPower(): Promise<Double>;
-	getAggregatedPowerLevelForLights: Promise<Double>;
+	getAggregatedPowerLevelForLightsThatContributeToTotalPower(): Promise<number>;
+	getAggregatedPowerLevelForLights(): Promise<ITuple<string, number>>;
 
-	getLivePowerForPlug(plugName: string): Promise<Double>;
-	getCachedPowerForPlug(plugName: string): Double;
+	getLivePowerForPlug(plugName: string): Promise<ITuple<string, number>>;
+	getCachedPowerForPlug(plugName: string): number;
 	getRawPlugState(plugName: string): Promise<any>;
 	isPlugRelayOn(plugName: string): Promise<boolean>;
 
 	updatePlugState(plugName: string, stateOn: boolean): Promise<boolean>;
 	togglePlugState(plugName: string): Promise<boolean>;
-	registerPlugPowerEvent(plugName: string, callbackOn: ()=>void, callbackOff: ()=>void);
+	registerPlugPowerEvent(plugName: string, callbackOn: ()=>void, callbackOff: ()=>void): void;
 
 }

@@ -10,7 +10,7 @@ const hueMotionSensorNameIdMapping: {[id: string]: number} = {
 
 // wattage per light in the 254 brightness state from Philips.
 // For entries that are -1 a per device mapping needs to be done
-const lightTypePowerMapping = {
+const lightTypePowerMapping: {[id: string]: number} = {
 	'Color temperature light': 5.5,
 	'Dimmable light': 9.5,
 	'Extended color light': 10.0,
@@ -23,7 +23,7 @@ const lightsPowerLevelNotScalable = [
 ];
 
 // wattage that each of the hue devices needs
-const lightIdPowerMapping = {
+const lightIdPowerMapping: {[id: string]: number} = {
 	'00:17:88:01:01:23:60:18-0b': 10.0, // IRIS Deckenstrahler
 	'00:17:88:01:00:cb:7d:95-0b': 13.0, // Lightstrip Fenster
 	'84:18:26:00:00:0b:3d:9d-03': 8.0, //Plug Schreibtisch

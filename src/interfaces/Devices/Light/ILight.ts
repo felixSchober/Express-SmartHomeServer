@@ -7,6 +7,7 @@ export interface ILight {
 	bri: number;
 	name: string;
 	type: string;
+	power: number;
 
 	changeState(newState: boolean): Promise<boolean>;
 	update(): Promise<ILight>;

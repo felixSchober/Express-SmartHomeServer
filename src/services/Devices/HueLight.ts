@@ -1,7 +1,8 @@
 import {ILight} from '../../interfaces/Devices/Light/ILight';
+import {IPowerLight} from '../../interfaces/Devices/Power/IPowerLight';
 import {HueService} from './HueService';
 
-export class HueLight implements ILight{
+export class HueLight implements IPowerLight{
 
 	public bri: number;
 	public id: string;
@@ -9,7 +10,7 @@ export class HueLight implements ILight{
 	public stateOn: boolean;
 	public type: string;
 	public uniqueId: string;
-
+	public power: number;
 
 	constructor(bri: number, id: string, name: string, stateOn: boolean, type: string, uniqueId: string) {
 		this.bri = bri;
@@ -18,6 +19,7 @@ export class HueLight implements ILight{
 		this.stateOn = stateOn;
 		this.type = type;
 		this.uniqueId = uniqueId;
+		this.power = -1;
 	}
 
 	public changeState(newState: boolean): Promise<boolean> {
@@ -63,5 +65,7 @@ export class HueLight implements ILight{
 				});
 		});
 	}
+
+
 
 }
