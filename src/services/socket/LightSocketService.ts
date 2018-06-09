@@ -4,8 +4,7 @@ import {IDeviceController} from '../../interfaces/IDeviceController';
 import {ISocketController} from '../../interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../interfaces/ISwitchStateChangeCommand';
 import {BaseSocketService} from './BaseSocketService';
-import { Socket, Server } from '@types/socket.io';
-import {RecurrenceRule, scheduleJob, Job} from '@types/node-schedule';
+import {Server, Socket} from 'socket.io';
 
 export class LightSocketService extends BaseSocketService {
 
@@ -34,7 +33,7 @@ export class LightSocketService extends BaseSocketService {
 			}
 
 			const lightController = this.controller as ILightControllerService;
-			let promise: Promise;
+			let promise: Promise<boolean>;
 
 			// TODO: Use enum
 			if (command.state === 'toggle') {
