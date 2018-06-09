@@ -5,4 +5,7 @@ export interface IPowerState {
 	powerHistories: { [id: string]: number[]};
 	powerHistoryKeys: string[];
 	timestamps: Moment[];
+
+	timeStep(): void;
+	updateValue(deviceName: string, value: number): void;
 }

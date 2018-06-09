@@ -29,7 +29,7 @@ export class PowerSocketService extends BaseSocketService {
 			}
 
 			const powerController = this.controller as IPowerControllerService;
-			let promise: Promise;
+			let promise: Promise<boolean>;
 			if (command.state === 'toggle') {
 				promise = powerController.togglePlugState(command.name);
 			} else {
@@ -65,14 +65,16 @@ export class PowerSocketService extends BaseSocketService {
 				const aggregatedGraph: IGraphValues[] = [];
 
 				// send current power levels
+				let index = 0;
 				for(const name of powerState.powerHistoryKeys) {
-					const currentPower = powerState.powerStates[name];
-					const graphValues = this.formatForDashboard(powerState, name);
+					const currentPower = powerState.powerStates[index];
+					const graphValues = PowerSocketService.formatForDashboard(powerState, name);
 
 					aggregatedGraph.push(graphValues);
 
 					this.socketController.send('powerLevelValue_' + name, currentPower);
 					this.socketController.send('powerLevelHistory_' + name, [graphValues]);
+					index++;
 				}
 
 				this.socketController.send('powerLevelHistory_Total', aggregatedGraph);
@@ -80,7 +82,7 @@ export class PowerSocketService extends BaseSocketService {
 			.catch((err) => this.socketController.log('Could not power history entries. Error: ' + err, true));
 	}
 
-	private formatForDashboard(powerState: IPowerState, deviceIndexName: string): IGraphValues {
+	private static formatForDashboard(powerState: IPowerState, deviceIndexName: string): IGraphValues {
 		const powerHistoryValues = powerState.powerHistories[deviceIndexName];
 		let timeStamps = powerState.timestamps;
 
