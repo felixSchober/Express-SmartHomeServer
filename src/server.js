@@ -83,7 +83,7 @@ fs.readdirSync(__dirname + '/socket').forEach((file) => {
 	console.log('Socket Actor {0} initialized.'.format(file));
 });
 
-const socketHandler = require('./services/controllers/socket').getSocketHandler(io, socketModules);
+const socketHandler = require('./Services/controllers/socket').getSocketHandler(io, socketModules);
 
 
 io.on('connection', socketHandler);

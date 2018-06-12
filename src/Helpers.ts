@@ -1,9 +1,9 @@
 import {CoreOptions, Options} from 'request';
 import * as request from 'request';
 import {openHab} from './config/openHab';
-import {IRequestResponse} from './interfaces/IRequestResponse';
-import {ITuple} from './interfaces/ITuple';
-import {IValueType} from './interfaces/IValueType';
+import {IRequestResponse} from './Interfaces/IRequestResponse';
+import {ITuple} from './Interfaces/ITuple';
+import {IValueType} from './Interfaces/IValueType';
 import * as moment from 'moment';
 
 
