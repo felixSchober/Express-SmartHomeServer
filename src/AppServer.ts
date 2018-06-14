@@ -70,7 +70,7 @@ export class AppServer {
 	 */
 	private config() {
 
-		console.log('######################################### CONFIG #########################################\n')
+		console.log('######################################### CONFIG #########################################\n');
 
 		//add static paths
 		this.app.use(express.static(path.join(__dirname, "public")));
@@ -145,7 +145,7 @@ export class AppServer {
 
 		// Load socket modules
 		console.log('\t\tCreating socket device controllers');
-		const calendar: ISocketService = new CalendarSocketService('Calendar', io, 'calendar', calendarService, socketController);
+		//const calendar: ISocketService = new CalendarSocketService('Calendar', io, 'calendar', calendarService, socketController);
 		const harmony = new HarmonySocketService('Harmony', io, 5, 'harmony', harmonyService, socketController);
 		const hue = new LightSocketService('Light', io, 10, 'lights', hueService, socketController);
 		const power = new PowerSocketService('Power', io, 10, 'power', powerService, socketController);

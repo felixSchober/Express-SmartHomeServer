@@ -1,6 +1,6 @@
 import {Options} from 'request';
 import {Helpers} from '../../Helpers';
-import {IAggregatedLightResult} from '../../Interfaces/Devices/Light/IAggregatedLightResult';
+import {AggregatedLightResult} from '../../Interfaces/Devices/Light/AggregatedLightResult';
 import {ILight} from '../../Interfaces/Devices/Light/ILight';
 import {ILightControllerService} from '../../Interfaces/Devices/Light/ILightControllerService';
 import {ILightGroupState} from '../../Interfaces/Devices/Light/ILightGroupState';
@@ -19,7 +19,7 @@ export class HueService implements ILightControllerService {
 			method: 'PUT',
 			json: body
 		};
-		return Helpers.performRequest(options, '[HUE]', false, true);
+		return Helpers.performRequest(options, '[HUE]', false, false);
 	}
 
 	static doHueGetRequest(path: string): Promise<IRequestResponse> {
@@ -34,10 +34,15 @@ export class HueService implements ILightControllerService {
 	// there is no way to get the active scene from the hue api. So to be able to toggle scenes we have keep track of
 	// scenes we active.
 	public currentGroupStates: { [p: string]: ILightSceneState } = {};
-	private lightStateCache: IAggregatedLightResult;
+	private lightStateCache: AggregatedLightResult;
 	private lightNameMapping: {[name: string]: ILight} = {};
 
-	public getCachedLightStateIfPossible(): Promise<IAggregatedLightResult> {
+
+	constructor() {
+		this.lightStateCache = new AggregatedLightResult();
+	}
+
+	public getCachedLightStateIfPossible(): Promise<AggregatedLightResult> {
 		const now = moment();
 		const timeDiff = now.diff(this.lightStateCache.lastRefreshed, 'seconds');
 		return new Promise((resolve, reject) => {
@@ -52,7 +57,7 @@ export class HueService implements ILightControllerService {
 		})
 	}
 
-	public getLights(): Promise<IAggregatedLightResult> {
+	public getLights(): Promise<AggregatedLightResult> {
 		return new Promise((resolve, reject) => {
 			// get the lights from the HUE rest api
 			HueService.doHueGetRequest('lights').then((result: IRequestResponse) => {
@@ -74,7 +79,7 @@ export class HueService implements ILightControllerService {
 						this.lightNameMapping[light.name] = light;
 					}
 
-					const lightsResult: IAggregatedLightResult = {
+					const lightsResult: AggregatedLightResult = {
 						totalCount: lights.length,
 						onCount: lights_on.length,
 						offCount: lights_off.length,
@@ -248,14 +253,9 @@ export class HueService implements ILightControllerService {
 		});
 	}
 
-	private refreshCache(newData: IAggregatedLightResult) {
+	private refreshCache(newData: AggregatedLightResult) {
+		this.lightStateCache = newData;
 		this.lightStateCache.lastRefreshed = new Date();
-		this.lightStateCache.lights = newData.lights;
-		this.lightStateCache.lightsOff = newData.lightsOff;
-		this.lightStateCache.lightsOn = newData.lightsOn;
-		this.lightStateCache.totalCount = newData.totalCount;
-		this.lightStateCache.onCount = newData.onCount;
-		this.lightStateCache.offCount = newData.offCount;
 	}
 
 }

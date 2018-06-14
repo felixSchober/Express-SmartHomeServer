@@ -23,7 +23,7 @@ export class CalendarSocketService extends BaseSocketService {
 		// TODO send initial state for calendar
 	}
 
-	public sendUpdates() {
+	sendUpdates = () => {
 		const calendarController = this.controller as ICalendarControllerService;
 
 		calendarController.getEventsFuture()

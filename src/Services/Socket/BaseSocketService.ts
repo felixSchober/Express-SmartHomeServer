@@ -1,9 +1,10 @@
 import {Job, RecurrenceRule, scheduleJob} from 'node-schedule';
 import {IDeviceController} from '../../Interfaces/IDeviceController';
-import {IPollingIntervalRule} from '../../Interfaces/IPollingIntervalRule';
+import {PollingIntervalRule} from '../../Interfaces/PollingIntervalRule';
 import {ISocketController} from '../../Interfaces/ISocketController';
 import {ISocketService} from '../../Interfaces/ISocketService';
 import {Server, Socket} from 'socket.io';
+import * as moment from 'moment';
 
 
 export abstract class BaseSocketService implements ISocketService {
@@ -13,15 +14,16 @@ export abstract class BaseSocketService implements ISocketService {
 	public io: Server;
 	public controller: IDeviceController;
 	public socketController: ISocketController;
-	pollingIntervalRule: IPollingIntervalRule;
+	pollingIntervalRule: PollingIntervalRule;
 	pollingInterval: number;
+	public sendUpdates: () => void;
 
 
-	protected constructor(socketName: string, io: Server, socketMessageIdentifier: string, controller: IDeviceController, socketController: ISocketController, pollingIntervalRule?: IPollingIntervalRule) {
+	protected constructor(socketName: string, io: Server, socketMessageIdentifier: string, controller: IDeviceController, socketController: ISocketController, pollingIntervalRule?: PollingIntervalRule) {
 		this.socketName = socketName;
 		this.socketMessageIdentifier = socketMessageIdentifier;
-		this.pollingIntervalRule = pollingIntervalRule || {second: '*', minute: '*/15', hour: '*', day: '*'};
-		this.pollingInterval = 15;
+		this.pollingIntervalRule = pollingIntervalRule || new PollingIntervalRule(10);
+		this.pollingInterval = this.pollingIntervalRule.getSeconds();
 		this.io = io;
 		this.controller = controller;
 		this.sockets = [];
@@ -31,22 +33,14 @@ export abstract class BaseSocketService implements ISocketService {
 	}
 
 	public initializeSocketActor(): Job{
-		const rule = new RecurrenceRule('*',
-			'*',
-			'*',
-			'*',
-			this.pollingIntervalRule.hour,
-			this.pollingIntervalRule.minute,
-			this.pollingIntervalRule.second);
-
-		return scheduleJob(rule, this.sendUpdates);
+		const rule = this.pollingIntervalRule.createScheduleRecurrenceRule();
+		return scheduleJob(rule, () => {
+			console.log(`[Schedule] (${moment().format('HH:mm:ss')}) > ${this.socketName}`);
+			this.sendUpdates();
+		});
 	}
 
 	public abstract addSocketObserver(socket: Socket) : void;
 
 	public abstract sendInitialState() : void;
-
-	public abstract sendUpdates() : void;
-
-
 }
