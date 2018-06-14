@@ -5,6 +5,7 @@ import {ISwitchStateChangeCommand} from '../../Interfaces/ISwitchStateChangeComm
 import {BaseSocketService} from './BaseSocketService';
 import {Server, Socket} from 'socket.io';
 import {ISocketController} from '../../Interfaces/ISocketController';
+import {PollingIntervalRule} from "../../Interfaces/PollingIntervalRule";
 
 
 export class HarmonySocketService extends BaseSocketService {
@@ -16,15 +17,21 @@ export class HarmonySocketService extends BaseSocketService {
 	            socketMessageIdentifier: string,
 	            controller: IDeviceController,
 	            socketController: ISocketController) {
-		super(socketName, io, socketMessageIdentifier, controller, socketController, {day: '*', hour: '*', minute: '*', second: '*/' + pollingInterval});
+		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
 	}
 
 	public addSocketObserver(socket: Socket) {
 		this.sockets.push(socket);
 
+		const socketActivityTopicIdentifier = this.socketMessageIdentifier + '_activity';
+		const socketChannelTopicIdentifier = this.socketMessageIdentifier + '_channel';
+
+
+		this.socketController.log(`[Socket] New Observer for topic ${socketActivityTopicIdentifier}`, false);
+		this.socketController.log(`[Socket] New Observer for topic ${socketChannelTopicIdentifier}`, false);
 
 		// Harmony ACTIVITY SWITCHING
-		socket.on(this.socketMessageIdentifier + '_activity', (command: ISwitchStateChangeCommand) => {
+		socket.on(socketActivityTopicIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Harmony] Received activity turn on change command via socket but message is invalid';
 				this.socketController.log(logMessage, false);
@@ -54,7 +61,7 @@ export class HarmonySocketService extends BaseSocketService {
 		});
 
 		// Harmony CHANNEL SWITCHING
-		socket.on(this.socketMessageIdentifier + '_channel', (command: ISwitchStateChangeCommand) => {
+		socket.on(socketChannelTopicIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Harmony] Received channel change command via socket but message is invalid';
 				this.socketController.log(logMessage, false);
@@ -78,9 +85,9 @@ export class HarmonySocketService extends BaseSocketService {
 		this.sendCurrentState();
 	}
 
-	public sendUpdates() {
+	public sendUpdates = () => {
 		this.sendCurrentState();
-	}
+	};
 
 	private sendCurrentState(){
 		const harmonyController = this.controller as IHarmonyControllerService;

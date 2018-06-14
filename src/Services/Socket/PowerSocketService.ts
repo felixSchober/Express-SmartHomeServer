@@ -6,6 +6,7 @@ import {IDeviceController} from '../../Interfaces/IDeviceController';
 import {ISocketController} from '../../Interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../Interfaces/ISwitchStateChangeCommand';
 import {BaseSocketService} from './BaseSocketService';
+import {PollingIntervalRule} from "../../Interfaces/PollingIntervalRule";
 
 export class PowerSocketService extends BaseSocketService {
 
@@ -15,12 +16,13 @@ export class PowerSocketService extends BaseSocketService {
 	            socketMessageIdentifier: string,
 	            controller: IDeviceController,
 	            socketController: ISocketController) {
-		super(socketName, io, socketMessageIdentifier, controller, socketController, {day: '*', hour: '*', minute: '*', second: '*/' + pollingInterval});
+		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
 	}
 
 	public addSocketObserver(socket: Socket) {
 		this.sockets.push(socket);
 
+		this.socketController.log(`[Socket] New Observer for topic ${this.socketMessageIdentifier}`, false);
 		socket.on(this.socketMessageIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Power] Received power change command via socket but message is invalid';
@@ -57,7 +59,7 @@ export class PowerSocketService extends BaseSocketService {
 		}
 	}
 
-	public sendUpdates() {
+	public sendUpdates = () => {
 		const powerController = this.controller as IPowerControllerService;
 
 		powerController.updatePowerState()
@@ -80,7 +82,7 @@ export class PowerSocketService extends BaseSocketService {
 				this.socketController.send('powerLevelHistory_Total', aggregatedGraph);
 			})
 			.catch((err) => this.socketController.log('Could not power history entries. Error: ' + err, true));
-	}
+	};
 
 	private static formatForDashboard(powerState: IPowerState, deviceIndexName: string): IGraphValues {
 		const powerHistoryValues = powerState.powerHistories[deviceIndexName];

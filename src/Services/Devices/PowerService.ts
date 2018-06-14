@@ -1,4 +1,4 @@
-import {IAggregatedLightResult} from '../../Interfaces/Devices/Light/IAggregatedLightResult';
+import {AggregatedLightResult} from '../../Interfaces/Devices/Light/AggregatedLightResult';
 import {ILightControllerService} from '../../Interfaces/Devices/Light/ILightControllerService';
 import {IPlug} from '../../Interfaces/Devices/Power/IPlug';
 import {IPowerControllerService} from '../../Interfaces/Devices/Power/IPowerControllerService';
@@ -74,7 +74,7 @@ export class PowerService implements IPowerControllerService {
 		return new Promise((resolve, reject) => {
 			// get 'on' lights
 			this.hueController.getLights()
-				.then((result: IAggregatedLightResult) => {
+				.then((result: AggregatedLightResult) => {
 					const lightsOn = result.lightsOn;
 
 					if (lightsOn === undefined || lightsOn.length < 1) {

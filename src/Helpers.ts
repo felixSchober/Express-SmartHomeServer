@@ -40,7 +40,7 @@ export class Helpers {
 			}
 
 			// default for parseJson is true
-			parseJson = parseJson || true;
+			parseJson = parseJson === undefined ? true : parseJson;
 
 			request(options, function (err: string, response: any, body: any) {
 				if (err) {

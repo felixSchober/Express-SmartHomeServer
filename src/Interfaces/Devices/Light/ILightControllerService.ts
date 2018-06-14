@@ -1,5 +1,5 @@
 import {IDeviceController} from '../../IDeviceController';
-import {IAggregatedLightResult} from './IAggregatedLightResult';
+import {AggregatedLightResult} from './AggregatedLightResult';
 import {ILight} from './ILight';
 import {ILightGroupState} from './ILightGroupState';
 import {ILightSceneState} from './ILightSceneState';
@@ -10,9 +10,9 @@ export interface ILightControllerService extends IDeviceController {
 	getSensors(): Promise<any>;
 	getSensorTemperature(sensorId: string): Promise<number>
 
-	getLights(): Promise<IAggregatedLightResult>;
+	getLights(): Promise<AggregatedLightResult>;
 	getSingleLight(lightName: string): Promise<ILight>;
-	getCachedLightStateIfPossible(): Promise<IAggregatedLightResult>;
+	getCachedLightStateIfPossible(): Promise<AggregatedLightResult>;
 	setLightState(lightName: string, state: boolean): Promise<boolean>;
 	toggleLightState(lightName: string): Promise<boolean>;
 

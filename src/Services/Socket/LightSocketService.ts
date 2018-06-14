@@ -1,10 +1,11 @@
-import {IAggregatedLightResult} from '../../Interfaces/Devices/Light/IAggregatedLightResult';
+import {AggregatedLightResult} from '../../Interfaces/Devices/Light/AggregatedLightResult';
 import {ILightControllerService} from '../../Interfaces/Devices/Light/ILightControllerService';
 import {IDeviceController} from '../../Interfaces/IDeviceController';
 import {ISocketController} from '../../Interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../Interfaces/ISwitchStateChangeCommand';
 import {BaseSocketService} from './BaseSocketService';
 import {Server, Socket} from 'socket.io';
+import {PollingIntervalRule} from "../../Interfaces/PollingIntervalRule";
 
 export class LightSocketService extends BaseSocketService {
 
@@ -14,7 +15,7 @@ export class LightSocketService extends BaseSocketService {
 	            socketMessageIdentifier: string,
 	            controller: IDeviceController,
 	            socketController: ISocketController) {
-		super(socketName, io, socketMessageIdentifier, controller, socketController, {day: '*', hour: '*', minute: '*', second: '*/' + pollingInterval});
+		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
 	}
 
 	public sendInitialState() {
@@ -25,6 +26,7 @@ export class LightSocketService extends BaseSocketService {
 		this.sockets.push(socket);
 
 		// LIGHT EVENTS
+		this.socketController.log(`[Socket] New Observer for topic ${this.socketMessageIdentifier}`, false);
 		socket.on(this.socketMessageIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Lights] Received light change command via socket but message is invalid';
@@ -44,20 +46,25 @@ export class LightSocketService extends BaseSocketService {
 			}
 
 			// execute promise
-			promise.then((newState: boolean) => this.socketController.log(
-				'[Lights] State change successful. New State for Light ' + command.name + ': ' + newState, false))
+			promise.then((newState: boolean) => {
+				this.socketController.log(
+					'[Lights] State change successful. New State for Light ' + command.name + ': ' + newState, false);
+
+				// send new state
+				this.socketController.send(this.socketMessageIdentifier + '_' + command.name, newState);
+				})
 			.catch((err) => this.socketController.log(
 					'[Lights] State change NOT successful. Light Name ' + command.name + ' - Error: ' + err, true));
 		});
 
 	}
 
-	public sendUpdates() {
+	public sendUpdates = () => {
 		const lightController = this.controller as ILightControllerService;
 		lightController.getCachedLightStateIfPossible()
 			.then((result) => this.sendLightState(result))
 			.catch((err) => this.socketController.log('Could not get light states ' + err, true));
-	}
+	};
 
 	sendInitialLightStates() {
 		const lightController = this.controller as ILightControllerService;
@@ -67,7 +74,7 @@ export class LightSocketService extends BaseSocketService {
 			.catch((err) => this.socketController.log('Could not get initial light states ' + err, true));
 	}
 
-	private sendLightState(lightStates: IAggregatedLightResult) {
+	private sendLightState(lightStates: AggregatedLightResult) {
 		this.socketController.send(this.socketMessageIdentifier + '_CountTotal', lightStates.totalCount);
 		this.socketController.send( this.socketMessageIdentifier + '_CountOn', lightStates.onCount);
 		this.socketController.send( this.socketMessageIdentifier + '_CountOff', lightStates.offCount);
