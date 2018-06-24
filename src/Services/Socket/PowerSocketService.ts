@@ -65,6 +65,7 @@ export class PowerSocketService extends BaseSocketService {
 		powerController.updatePowerState()
 			.then((powerState: IPowerState) => {
 				const aggregatedGraph: IGraphValues[] = [];
+				let aggregatedPowerValue = 0;
 
 				// send current power levels
 				let index = 0;
@@ -73,6 +74,7 @@ export class PowerSocketService extends BaseSocketService {
 					const graphValues = PowerSocketService.formatForDashboard(powerState, name);
 
 					aggregatedGraph.push(graphValues);
+					aggregatedPowerValue += currentPower;
 
 					this.socketController.send('powerLevelValue_' + name, currentPower);
 					this.socketController.send('powerLevelHistory_' + name, [graphValues]);
@@ -80,6 +82,8 @@ export class PowerSocketService extends BaseSocketService {
 				}
 
 				this.socketController.send('powerLevelHistory_Total', aggregatedGraph);
+				this.socketController.send('powerLevelValue_Total', aggregatedPowerValue);
+
 			})
 			.catch((err) => this.socketController.log('Could not power history entries. Error: ' + err, true));
 	};
