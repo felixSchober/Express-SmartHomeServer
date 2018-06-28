@@ -28,8 +28,16 @@ export class PowerHS110Plug implements IPlug {
 			this.plugController.getDevice({host: this.ip})
 				.then((device: any) => {
 					device.emeter.getRealtime().then((response: any) => {
-							const t: ITuple<string, number> = {obj1: this.name, obj2: response.power};
-							resolve(t);
+						// we need to differentiate between hardware version 1 and 2.
+						// the responses are different
+						let t: ITuple<string, number>;
+						if (response.power != null) {
+							t = {obj1: this.name, obj2: response.power};
+						} else {
+							t = {obj1: this.name, obj2: response.power_mw/1000};
+						}
+
+						resolve(t);
 						})
 						.catch(function (err: any) {
 							reject(err);
