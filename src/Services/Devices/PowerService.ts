@@ -32,10 +32,11 @@ export class PowerService implements IPowerControllerService {
 			'Espresso': '192.168.178.62',
 			'Media': '192.168.178.66',
 			'Kitchen': '192.168.178.65',
-			'Computer': '192.168.178.64'};
+			'Computer': '192.168.178.64',
+			'Kochplatte': '192.168.178.72'};
 
 		this.energyHistoryEntriesPerHour = 60 * 60 / pollingInterval;
-		this.devices = ['Espresso', 'Media', 'Kitchen', 'Computer'];
+		this.devices = ['Espresso', 'Media', 'Kitchen', 'Computer', 'Kochplatte'];
 		this.lightsThatCountTowardsTotalPower =  [
 			'00:17:88:01:10:5c:37:d0-0b', // Eingang
 			'00:17:88:01:10:5c:3c:f5-0b', // Kueche
@@ -45,7 +46,11 @@ export class PowerService implements IPowerControllerService {
 			'00:17:88:01:00:cb:7d:95-0b', // Fenster
 			'00:17:88:01:02:7b:29:94-0b', // Decke
 			'7c:b0:3e:aa:00:a3:ca:f5-03', // Schrank
-			'84:18:26:00:00:0c:6f:43-03'  // Arbeitsplatte
+			'84:18:26:00:00:0c:6f:43-03', // Arbeitsplatte
+			'84:18:26:00:00:0b:3d:9d-03', // Schreibtisch
+			'00:17:88:01:03:ae:ca:89-0b', // Küche Spot links
+			'00:17:88:01:03:ae:bb:19-0b', // Küche Spot rechts
+			'00:17:88:01:03:e1:65:b8-0b'  // Bad leiste
 		];
 
 		// create plug array
@@ -56,7 +61,7 @@ export class PowerService implements IPowerControllerService {
 		}
 
 		// create the power history
-		this.powerHistory = new PowerState(['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights'], pollingInterval);
+		this.powerHistory = new PowerState(['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights', 'Kochplatte'], pollingInterval);
 
 	}
 
