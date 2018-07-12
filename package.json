@@ -41,7 +41,10 @@
     "start": "node ./bin/www",
     "start-debug": "node $NODE_DEBUG_OPTION ./bin/www",
     "start-windows": "node %NODE_DEBUG_OPTION% ./bin/www",
-    "start-windows-nodebug": "node ./bin/www"
+    "start-windows-nodebug": "node ./bin/www",
+    "start-forever": "forever start ./bin/www",
+    "stop-forever": "forever stopall"
+
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.1",
