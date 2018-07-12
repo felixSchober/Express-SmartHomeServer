@@ -9,7 +9,7 @@ const debug = require('debug')('express:server');
 
 
 //create http server
-const httpPort = normalizePort(process.env.PORT || 8080);
+const httpPort = normalizePort(process.env.PORT || 4040);
 
 console.log('[SERVER - JS] Using ' + httpPort + ' as port.');
 console.log('[SERVER - JS] Bootstrapping Typescript server component.');
