@@ -8,6 +8,7 @@ export class HarmonyService implements IHarmonyControllerService {
 	private readonly channelNumberMapping: {[id: string]: number[]};
 	private currentChannelName: string;
 	private readonly channelList: string[];
+	private readonly activityNameList: string[];
 
 	constructor(){
 		this.channelNumberMapping = {
@@ -69,6 +70,18 @@ export class HarmonyService implements IHarmonyControllerService {
 			'TAGESSCHAU24',
 			'PRO7MAX',
 			'WDW']
+		this.activityNameList = [
+			'Fernsehen',
+			'Amazon Video',
+			'Netflix',
+			'Starte Apple TV',
+			'Radio',
+			'XBOX',
+			'Alexa',
+			'Airplay Music',
+			'iTunes',
+			'Netflix Weiter'
+		];
 	}
 
 
@@ -159,5 +172,43 @@ export class HarmonyService implements IHarmonyControllerService {
 				});
 		});
 	}
+
+	getAllActivityNames(): string[] {
+		return this.activityNameList;
+	}
+
+	getStateOfActivities(): Promise<IHarmonyActivity[]> {
+		return new Promise<IHarmonyActivity[]>((resolve, reject) => {
+			this.getCurrentActivity()
+				.then((currentActivity: IHarmonyActivity) => {
+					// prepare list
+					const result: IHarmonyActivity[] = [];
+
+					const activityNames = this.getAllActivityNames();
+					activityNames.forEach(aName =>{
+						if (aName === currentActivity.name) {
+							result.push(currentActivity);
+						} else {
+							const a: IHarmonyActivity = {
+								name: aName,
+								isOn: false
+							};
+							result.push(a);
+						}
+					});
+					resolve(result);
+				})
+				.catch((err) => {
+					console.error('[HARMONY]:\tgetStateOfActivities() - Error while performing request. Error: ' + err);
+					reject({success: false, error: err});
+				});
+		});
+	}
+
+
+
+
+
+
 
 }
