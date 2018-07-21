@@ -95,13 +95,21 @@ export class HarmonySocketService extends BaseSocketService {
 		this.socketController
 			.send(this.socketMessageIdentifier + '_currentChannel', harmonyController.getCurrentTvChannel());
 
-		// send current activity
-		harmonyController.getCurrentActivity()
-			.then((activity: IHarmonyActivity) =>  {
-				this.socketController
-					.send(this.socketMessageIdentifier + '_currentActivity', activity.name);
-				this.socketController
-					.send(`${this.socketMessageIdentifier}_activity_${activity.name}_state`, activity.isOn);
+		// send state of all activities
+		harmonyController.getStateOfActivities()
+			.then((activites: ReadonlyArray<IHarmonyActivity>) =>  {
+
+				activites.forEach(activity => {
+					if (activity.isOn) {
+						this.socketController
+							.send(this.socketMessageIdentifier + '_currentActivity', activity.name);
+					}
+
+					this.socketController
+						.send(`${this.socketMessageIdentifier}_activity_${activity.name}_state`, activity.isOn);
+				});
+
+
 			}).catch((err) => this.socketController.log(
 			'[Harmony] Could not send activity. - Error: ' + err, true));
 	}

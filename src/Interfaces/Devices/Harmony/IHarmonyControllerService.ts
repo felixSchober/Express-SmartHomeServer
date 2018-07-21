@@ -8,4 +8,6 @@ export interface IHarmonyControllerService extends IDeviceController {
 
 	changeTvChannel(channelName: string): Promise<any>;
 	getCurrentTvChannel(): number;
+	getAllActivityNames(): string[]
+	getStateOfActivities(): Promise<ReadonlyArray<IHarmonyActivity>>;
 }
