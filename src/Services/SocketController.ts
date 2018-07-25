@@ -10,8 +10,7 @@ export class SocketController implements ISocketController {
 	socketServices: ISocketService[];
 
 	// log the messages
-	private topicDictionary: {[id: string]: any};
-
+	private readonly topicDictionary: {[id: string]: any};
 
 	constructor(io: Server) {
 		this.io = io;
