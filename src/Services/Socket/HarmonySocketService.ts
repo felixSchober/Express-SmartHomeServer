@@ -20,7 +20,7 @@ export class HarmonySocketService extends BaseSocketService {
 		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
 	}
 
-	public addSocketObserver(socket: Socket) {
+	public addSocketObserver(socket: Socket): void {
 		this.sockets.push(socket);
 
 		const socketActivityTopicIdentifier = this.socketMessageIdentifier + '_activity';
@@ -53,8 +53,8 @@ export class HarmonySocketService extends BaseSocketService {
 			// execute promise
 			promise.then((newState: IHarmonyActivity) => {
 					this.socketController.log(
-						'[Harmony] Activity change successful. New State for Activity ' + command.name + ': ' + newState, false)
-					// TODO: Push new harmony state
+						'[Harmony] Activity change successful. New State for Activity ' + command.name + ': ' + newState, false);
+					this.sendCurrentState();
 				})
 				.catch((err) => this.socketController.log(
 					'[Harmony] Activity change NOT successful. Activity Name ' + command.name + ' - Error: ' + err, true));
@@ -73,15 +73,15 @@ export class HarmonySocketService extends BaseSocketService {
 			// execute promise
 			harmonyController.changeTvChannel(command.state).then((newState: string) => {
 					this.socketController.log(
-						'[Harmony] TV channel change successful. New State for Activity ' + command.name + ': ' + newState, false)
-					// TODO: Push new harmony state
+						'[Harmony] TV channel change successful. New State for Activity ' + command.name + ': ' + newState, false);
+					this.sendCurrentState();
 				})
 				.catch((err) => this.socketController.log(
 					'[Harmony] TV channel change NOT successful. Activity Name ' + command.name + ' - Error: ' + err, true));
 		});
 	}
 
-	public sendInitialState() {
+	public sendInitialState(): void {
 		this.sendCurrentState();
 	}
 
@@ -89,7 +89,7 @@ export class HarmonySocketService extends BaseSocketService {
 		this.sendCurrentState();
 	};
 
-	private sendCurrentState(){
+	private sendCurrentState(): void {
 		const harmonyController = this.controller as IHarmonyControllerService;
 
 		this.socketController
@@ -98,9 +98,10 @@ export class HarmonySocketService extends BaseSocketService {
 		// send state of all activities
 		harmonyController.getStateOfActivities()
 			.then((activites: ReadonlyArray<IHarmonyActivity>) =>  {
-
+				let activityOnExists = false;
 				activites.forEach(activity => {
 					if (activity.isOn) {
+						activityOnExists = true;
 						this.socketController
 							.send(this.socketMessageIdentifier + '_currentActivity', activity.name);
 					}
@@ -108,6 +109,12 @@ export class HarmonySocketService extends BaseSocketService {
 					this.socketController
 						.send(`${this.socketMessageIdentifier}_activity_${activity.name}_state`, activity.isOn);
 				});
+
+				// if there is no activity currently running, send power off activity type
+				if (!activityOnExists) {
+					this.socketController
+						.send(this.socketMessageIdentifier + '_currentActivity', 'PowerOff');
+				}
 
 
 			}).catch((err) => this.socketController.log(
