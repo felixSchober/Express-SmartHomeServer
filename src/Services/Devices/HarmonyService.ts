@@ -74,6 +74,7 @@ export class HarmonyService implements IHarmonyControllerService {
 			'Fernsehen',
 			'Amazon Video',
 			'Netflix',
+			'Continue Netflix',
 			'Starte Apple TV',
 			'Radio',
 			'XBOX',
