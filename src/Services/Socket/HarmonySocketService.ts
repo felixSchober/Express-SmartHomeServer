@@ -34,8 +34,10 @@ export class HarmonySocketService extends BaseSocketService {
 		socket.on(socketActivityTopicIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Harmony] Received activity turn on change command via socket but message is invalid';
-				this.socketController.log(logMessage, false);
+				this.socketController.log(logMessage, true);
 				return;
+			} else {
+				this.socketController.log(`[Harmony] Received state change command to new state ${command.state}`, false);
 			}
 
 			const harmonyController = this.controller as IHarmonyControllerService;

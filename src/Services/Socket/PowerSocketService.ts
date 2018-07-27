@@ -26,8 +26,10 @@ export class PowerSocketService extends BaseSocketService {
 		socket.on(this.socketMessageIdentifier, (command: ISwitchStateChangeCommand) => {
 			if (!command) {
 				const logMessage = '[Power] Received power change command via socket but message is invalid';
-				this.socketController.log(logMessage, false);
+				this.socketController.log(logMessage, true);
 				return;
+			} else {
+				this.socketController.log(`[Power] Received change command for ${command.name}. New State: ${command.state}`, false);
 			}
 
 			const powerController = this.controller as IPowerControllerService;
@@ -39,8 +41,12 @@ export class PowerSocketService extends BaseSocketService {
 				promise = powerController.updatePlugState(command.name, state);
 			}
 
-			promise.then((newState: boolean) => this.socketController.log(
-				'[Power] State change successful. New State for plug ' + command.name + ': ' + newState, false))
+			promise.then((newState: boolean) => {
+
+					this.socketController.log(
+						'[Power] State change successful. New State for plug ' + command.name + ': ' + newState, false);
+					this.socketController.send(this.socketMessageIdentifier + '_' + command.name, newState);
+				})
 				.catch((err: any) => this.socketController.log(
 					'[Power] State change NOT successful. Plug ' + command.name + ' - Error: ' + err, true));
 		});
