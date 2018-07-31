@@ -2,7 +2,7 @@ import {IDeviceController} from '../../IDeviceController';
 import {ITuple} from '../../ITuple';
 import {IPlug} from './IPlug';
 import {IPowerLight} from './IPowerLight';
-import {IPowerState} from './IPowerState';
+import {GraphStates} from "../../../Services/Devices/GraphStates";
 
 export interface IPowerControllerService extends IDeviceController {
 	energyHistoryEntriesPerHour: number;
@@ -11,7 +11,7 @@ export interface IPowerControllerService extends IDeviceController {
 	deviceIpMapping: { [id: string] : string };
 	lightsThatCountTowardsTotalPower: string[];
 
-	updatePowerState(): Promise<IPowerState>;
+	updatePowerState(): Promise<GraphStates>;
 	getPowerForLights(): Promise<IPowerLight[]>;
 	getAggregatedPowerLevelForLightsThatContributeToTotalPower(): Promise<number>;
 	getAggregatedPowerLevelForLights(): Promise<ITuple<string, number>>;

@@ -1,12 +1,10 @@
-import {AggregatedLightResult} from '../../Interfaces/Devices/Light/AggregatedLightResult';
 import {ILightControllerService} from '../../Interfaces/Devices/Light/ILightControllerService';
 import {IDeviceController} from '../../Interfaces/IDeviceController';
 import {ISocketController} from '../../Interfaces/ISocketController';
-import {ISwitchStateChangeCommand} from '../../Interfaces/ISwitchStateChangeCommand';
 import {BaseSocketService} from './BaseSocketService';
 import {Server, Socket} from 'socket.io';
 import {PollingIntervalRule} from "../../Interfaces/PollingIntervalRule";
-import {ITemperatureSensorResult} from "../../Interfaces/Devices/ITemperatureSensorResult";
+import {GraphStates} from "../Devices/GraphStates";
 
 export class ClimateSocketService extends BaseSocketService {
 
@@ -20,7 +18,7 @@ export class ClimateSocketService extends BaseSocketService {
 	}
 
 	public sendInitialState() {
-		this.sendInitialLightStates();
+		this.sendCurrentState();
 	}
 
 	public addSocketObserver(socket: Socket) {
@@ -31,18 +29,21 @@ export class ClimateSocketService extends BaseSocketService {
 		this.sendCurrentState();
 	};
 
-	sendInitialLightStates() {
-		this.sendCurrentState();
-	}
-
 	private sendCurrentState() {
 		const lightController = this.controller as ILightControllerService;
 
-		lightController.getSensorTemperatures()
-			.then((temperatures: ITemperatureSensorResult[]) => {
-				for (const temperature of temperatures) {
-					const topic = `${this.socketMessageIdentifier}_temperature_${temperature.name}`;
-					this.socketController.send(topic, temperature.temperature);
+		lightController.updateSensorTemperatures()
+			.then((temperatureStates: GraphStates) => {
+				let index = 0;
+				for (const tempStateName of temperatureStates.historyStatesKeys) {
+					const currentTemperature = temperatureStates.currentStates[index];
+					const graphValues = temperatureStates.formatForDashboard(tempStateName);
+
+					const topic = `${this.socketMessageIdentifier}_temperature_${tempStateName}`;
+					this.socketController.send(topic + '_current', currentTemperature);
+					this.socketController.send(topic + '_history', [graphValues]);
+
+					index++;
 				}
 			})
 
