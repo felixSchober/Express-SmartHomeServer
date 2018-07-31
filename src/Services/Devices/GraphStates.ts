@@ -10,13 +10,13 @@ export class GraphStates {
 	public timestamps: Moment[];
 
 	private readonly historyUpdateEveryXSeconds: number;
-	private readonly historyEntriesPerHour: number;
+	private readonly numberOfHistoryEntries: number;
 
-	constructor(historyStatesKeys: string[], historyUpdateEveryXSeconds: number) {
+	constructor(historyStatesKeys: string[], historyUpdateEveryXSeconds: number, numberOfHistoryEntries?: number) {
 		this.historyStatesKeys = historyStatesKeys;
+		this.numberOfHistoryEntries = numberOfHistoryEntries || 60 * 60 / historyUpdateEveryXSeconds;
 
 		this.historyUpdateEveryXSeconds = historyUpdateEveryXSeconds;
-		this.historyEntriesPerHour =  60 * 60 / historyUpdateEveryXSeconds;
 
 		this.timestamps = this.generateInitialTimestamps();
 
@@ -25,7 +25,7 @@ export class GraphStates {
 
 		this.historyStatesDictionary = {};
 		for(const name of this.historyStatesKeys){
-			this.historyStatesDictionary[name] = GraphStates.generateArrayWithNTimesX(this.historyEntriesPerHour, 0);
+			this.historyStatesDictionary[name] = GraphStates.generateArrayWithNTimesX(this.numberOfHistoryEntries, 0);
 		}
 	}
 
@@ -33,7 +33,7 @@ export class GraphStates {
 		const result: Moment[] = [];
 
 		// generate the oldest entry first
-		for(let i = this.historyEntriesPerHour; i > 0; i--) {
+		for(let i = this.numberOfHistoryEntries; i > 0; i--) {
 			const secondsToSubtract = (i) * this.historyUpdateEveryXSeconds;
 			const ts = moment().subtract(secondsToSubtract, 'seconds');
 			result.push(ts);
