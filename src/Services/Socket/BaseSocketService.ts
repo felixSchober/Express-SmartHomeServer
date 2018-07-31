@@ -1,4 +1,4 @@
-import {Job, RecurrenceRule, scheduleJob} from 'node-schedule';
+import {Job, scheduleJob} from 'node-schedule';
 import {IDeviceController} from '../../Interfaces/IDeviceController';
 import {PollingIntervalRule} from '../../Interfaces/PollingIntervalRule';
 import {ISocketController} from '../../Interfaces/ISocketController';
@@ -34,6 +34,8 @@ export abstract class BaseSocketService implements ISocketService {
 
 	public initializeSocketActor(): Job{
 		const rule = this.pollingIntervalRule.createScheduleRecurrenceRule();
+
+		console.log(`[${this.socketName}]\tSchedule Job to run on this schedule: ${this.pollingIntervalRule.hour}h - ${this.pollingIntervalRule.minute}m - ${this.pollingIntervalRule.second}s`);
 		return scheduleJob(rule, () => {
 			console.log(`[Schedule] (${moment().format('HH:mm:ss')}) > ${this.socketName}`);
 			this.sendUpdates();

@@ -40,12 +40,20 @@ export class HueService implements ILightControllerService {
 	private lightNameMapping: {[name: string]: ILight} = {};
 	private temperatureStates: GraphStates;
 
-	constructor(temperatureSensorPollingIntervalInSeconds: number) {
+	constructor(temperatureSensorPollingIntervalInSeconds: number, keepTemperatureEntriesForLastXHours: number) {
 		this.lightStateCache = new AggregatedLightResult();
+
+		const numberOfEntriesToKeep = Math.round((
+			(60 / temperatureSensorPollingIntervalInSeconds)  // number of entries per minute
+				* 60) 										  // number of entries per hour
+					* keepTemperatureEntriesForLastXHours);	  // total number of entries
+
+		console.log(`[HUE] Keep ${numberOfEntriesToKeep} entries to fill the last ${keepTemperatureEntriesForLastXHours} hours`);
 
 		this.temperatureStates = new GraphStates(
 			hueConfig.hueMotionSensorNames,
-			temperatureSensorPollingIntervalInSeconds);
+			temperatureSensorPollingIntervalInSeconds,
+			numberOfEntriesToKeep);
 	}
 
 	public getCachedLightStateIfPossible(): Promise<AggregatedLightResult> {
