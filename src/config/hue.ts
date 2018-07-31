@@ -38,11 +38,12 @@ export const hueConfig = {
 	hueUser: hueUser,
 	hueUrl : hueIp + '/api/' + hueUser + '/',
 	hueMotionSensorNameIdMapping: hueMotionSensorNameIdMapping,
+	hueMotionSensorNames: ['kitchen', 'entrance'],
 	lightTypePowerMapping: lightTypePowerMapping,
 	lightIdPowerMapping: lightIdPowerMapping,
 	lightsPowerLevelNotScalable: lightsPowerLevelNotScalable,
 	maxBrightnessLevel: 254,
 	kitchenWorkSceneId: '2LQymE8reGFuffW',
 	kitchenGroupId: '9',
-	kitchenSceneGroupStatusWidgetId: 'kitchenGroupStatus'
+	kitchenSceneGroupStatusWidgetId: 'kitchenGroupStatus',
 };
