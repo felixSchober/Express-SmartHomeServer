@@ -3,12 +3,15 @@ import {AggregatedLightResult} from './AggregatedLightResult';
 import {ILight} from './ILight';
 import {ILightGroupState} from './ILightGroupState';
 import {ILightSceneState} from './ILightSceneState';
+import {ITemperatureSensorResult} from "../ITemperatureSensorResult";
+import {ITuple} from "../../ITuple";
 
 export interface ILightControllerService extends IDeviceController {
 	currentGroupStates: { [p: string]: ILightSceneState };
 
 	getSensors(): Promise<any>;
-	getSensorTemperature(sensorId: string): Promise<number>
+	getSensorTemperature(sensorId: string): Promise<ITuple<string, number>>;
+	getSensorTemperatures(): Promise<ReadonlyArray<ITemperatureSensorResult>>;
 
 	getLights(): Promise<AggregatedLightResult>;
 	getSingleLight(lightName: string): Promise<ILight>;
