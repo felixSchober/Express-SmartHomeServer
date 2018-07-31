@@ -19,6 +19,7 @@ import {HarmonySocketService} from './Services/Socket/HarmonySocketService';
 import {LightSocketService} from './Services/Socket/LightSocketService';
 import {PowerSocketService} from './Services/Socket/PowerSocketService';
 import {SocketController} from './Services/SocketController';
+import {ClimateSocketService} from "./Services/Socket/ClimateSocketService";
 
 export class AppServer {
 
@@ -140,7 +141,7 @@ export class AppServer {
 		console.log('\t\tCreating device controllers');
 		const calendarService = new CalendarService();
 		const harmonyService = new HarmonyService();
-		const hueService = new HueService();
+		const hueService = new HueService(60);
 		const powerService = new PowerService(hueService, 10);
 
 		// Load socket modules
@@ -148,6 +149,7 @@ export class AppServer {
 		//const calendar: ISocketService = new CalendarSocketService('Calendar', io, 'calendar', calendarService, socketController);
 		const harmony = new HarmonySocketService('Harmony', io, 5, 'harmony', harmonyService, socketController);
 		const hue = new LightSocketService('Light', io, 10, 'lights', hueService, socketController);
+		const hueTemp = new ClimateSocketService('HueTemp', io, 60, 'hueTemp', hueService, socketController);
 		const power = new PowerSocketService('Power', io, 10, 'power', powerService, socketController);
 
 		console.log('\t\tRegistering socket connection handler');

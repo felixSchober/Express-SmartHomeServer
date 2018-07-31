@@ -9,8 +9,8 @@ import {ILightSceneState} from '../../Interfaces/Devices/Light/ILightSceneState'
 import {IRequestResponse} from '../../Interfaces/IRequestResponse';
 import {HueLight} from './HueLight';
 import * as moment from 'moment';
-import {ITemperatureSensorResult} from "../../Interfaces/Devices/ITemperatureSensorResult";
 import {ITuple} from "../../Interfaces/ITuple";
+import {GraphStates} from "./GraphStates";
 
 
 export class HueService implements ILightControllerService {
@@ -38,9 +38,14 @@ export class HueService implements ILightControllerService {
 	public currentGroupStates: { [p: string]: ILightSceneState } = {};
 	private lightStateCache: AggregatedLightResult;
 	private lightNameMapping: {[name: string]: ILight} = {};
+	private temperatureStates: GraphStates;
 
-	constructor() {
+	constructor(temperatureSensorPollingIntervalInSeconds: number) {
 		this.lightStateCache = new AggregatedLightResult();
+
+		this.temperatureStates = new GraphStates(
+			hueConfig.hueMotionSensorNames,
+			temperatureSensorPollingIntervalInSeconds);
 	}
 
 	public getCachedLightStateIfPossible(): Promise<AggregatedLightResult> {
@@ -259,25 +264,25 @@ export class HueService implements ILightControllerService {
 		this.lightStateCache.lastRefreshed = new Date();
 	}
 
-	getSensorTemperatures(): Promise<ReadonlyArray<ITemperatureSensorResult>> {
+	updateSensorTemperatures(): Promise<GraphStates> {
 		const sensorNames = hueConfig.hueMotionSensorNames;
 		const promises: Promise<ITuple<string, number>>[] = [];
 		for (const sensorName of sensorNames) {
 			promises.push(this.getSensorTemperature(sensorName));
 		}
 
-		return new Promise<ReadonlyArray<ITemperatureSensorResult>>((resolve, reject) => {
+		return new Promise<GraphStates>((resolve, reject) => {
 			Promise.all(promises)
 				.then((results: ITuple<string, number>[]) => {
-					const result: ITemperatureSensorResult[] = [];
 					for (const temperatureTuple of results) {
-						result.push({temperature: temperatureTuple.obj2, name: temperatureTuple.obj1});
+						this.temperatureStates.updateValue(temperatureTuple.obj1, temperatureTuple.obj2);
 					}
-					resolve(result);
+					this.temperatureStates.timeStep();
+					resolve(this.temperatureStates);
 				})
 				.catch(function (err) {
-					console.error('[HUE]:\tgetSensorTemperatures() - For at least one temperature sensor request there was an error while getting the data. Error: ' + err);
-					reject('[HUE]:\tgetSensorTemperatures() - For at least one temperature sensor request there was an error while getting the data. Error: ' + err);
+					console.error('[HUE]:\tupdateSensorTemperatures() - For at least one temperature sensor request there was an error while getting the data. Error: ' + err);
+					reject('[HUE]:\tupdateSensorTemperatures() - For at least one temperature sensor request there was an error while getting the data. Error: ' + err);
 				});
 		});
 	}

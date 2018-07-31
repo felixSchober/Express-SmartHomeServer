@@ -1,12 +1,12 @@
 import {Server, Socket} from 'socket.io';
 import {IGraphValues} from '../../Interfaces/Dashboard/IGraphValues';
 import {IPowerControllerService} from '../../Interfaces/Devices/Power/IPowerControllerService';
-import {IPowerState} from '../../Interfaces/Devices/Power/IPowerState';
 import {IDeviceController} from '../../Interfaces/IDeviceController';
 import {ISocketController} from '../../Interfaces/ISocketController';
 import {ISwitchStateChangeCommand} from '../../Interfaces/ISwitchStateChangeCommand';
 import {BaseSocketService} from './BaseSocketService';
 import {PollingIntervalRule} from "../../Interfaces/PollingIntervalRule";
+import {GraphStates} from "../Devices/GraphStates";
 
 export class PowerSocketService extends BaseSocketService {
 
@@ -69,15 +69,15 @@ export class PowerSocketService extends BaseSocketService {
 		const powerController = this.controller as IPowerControllerService;
 
 		powerController.updatePowerState()
-			.then((powerState: IPowerState) => {
+			.then((powerState: GraphStates) => {
 				const aggregatedGraph: IGraphValues[] = [];
 				let aggregatedPowerValue = 0;
 
 				// send current power levels
 				let index = 0;
-				for(const name of powerState.powerHistoryKeys) {
-					const currentPower = powerState.powerStates[index];
-					const graphValues = PowerSocketService.formatForDashboard(powerState, name);
+				for(const name of powerState.historyStatesKeys) {
+					const currentPower = powerState.currentStates[index];
+					const graphValues = powerState.formatForDashboard(name);
 
 					aggregatedGraph.push(graphValues);
 					aggregatedPowerValue += currentPower;
@@ -93,23 +93,6 @@ export class PowerSocketService extends BaseSocketService {
 			})
 			.catch((err) => this.socketController.log('Could not power history entries. Error: ' + err, true));
 	};
-
-	private static formatForDashboard(powerState: IPowerState, deviceIndexName: string): IGraphValues {
-		const powerHistoryValues = powerState.powerHistories[deviceIndexName];
-		let timeStamps = powerState.timestamps;
-
-		// convert timestamps to full iso strings
-		const serializedTimestamps = [];
-		for(const ts of timeStamps){
-			serializedTimestamps.push(ts.toISOString(true))
-		}
-
-		return {
-			name: deviceIndexName,
-			labels: serializedTimestamps,
-			values: powerHistoryValues
-		};
-	}
 
 
 }

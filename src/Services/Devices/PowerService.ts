@@ -3,11 +3,10 @@ import {ILightControllerService} from '../../Interfaces/Devices/Light/ILightCont
 import {IPlug} from '../../Interfaces/Devices/Power/IPlug';
 import {IPowerControllerService} from '../../Interfaces/Devices/Power/IPowerControllerService';
 import {IPowerLight} from '../../Interfaces/Devices/Power/IPowerLight';
-import {IPowerState} from '../../Interfaces/Devices/Power/IPowerState';
 import {ITuple} from '../../Interfaces/ITuple';
 import {PowerHS110Plug} from './PowerHS110Plug';
 import {hueConfig} from '../../config/hue';
-import {PowerState} from './PowerState';
+import {GraphStates} from './GraphStates';
 
 const { Client } = require('tplink-smarthome-api');
 
@@ -16,7 +15,7 @@ export class PowerService implements IPowerControllerService {
 
 	private hueController: ILightControllerService;
 	private readonly plugController: any;
-	private powerHistory: IPowerState;
+	private powerHistory: GraphStates;
 
 	public deviceIpMapping: { [p: string]: string };
 	public devices: string[];
@@ -61,7 +60,7 @@ export class PowerService implements IPowerControllerService {
 		}
 
 		// create the power history
-		this.powerHistory = new PowerState(['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights', 'Kochplatte'], pollingInterval);
+		this.powerHistory = new GraphStates(['Espresso', 'Media', 'Kitchen', 'Computer', 'Lights', 'Kochplatte'], pollingInterval);
 
 	}
 
@@ -189,7 +188,7 @@ export class PowerService implements IPowerControllerService {
 		return this.plugs[plugIndex].updatePlugState(stateOn);
 	}
 
-	public updatePowerState(): Promise<IPowerState> {
+	public updatePowerState(): Promise<GraphStates> {
 		const promises: Promise<ITuple<string, number>>[] = [];
 
 		for (const deviceName of this.devices) {
