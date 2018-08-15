@@ -20,6 +20,8 @@ import {LightSocketService} from './Services/Socket/LightSocketService';
 import {PowerSocketService} from './Services/Socket/PowerSocketService';
 import {SocketController} from './Services/SocketController';
 import {ClimateSocketService} from "./Services/Socket/ClimateSocketService";
+import {iTunesService} from "./Services/Devices/iTunesService";
+import {ITunesSocketService} from "./Services/Socket/iTunesSocketService";
 
 export class AppServer {
 
@@ -143,6 +145,7 @@ export class AppServer {
 		const harmonyService = new HarmonyService();
 		const hueService = new HueService(10 * 60, 10);
 		const powerService = new PowerService(hueService, 10);
+		const musicService = new iTunesService();
 
 		// Load socket modules
 		console.log('\t\tCreating socket device controllers');
@@ -151,6 +154,7 @@ export class AppServer {
 		const hue = new LightSocketService('Light', io, 10, 'lights', hueService, socketController);
 		const hueTemp = new ClimateSocketService('HueTemp', io, 10, 'hueTemp', hueService, socketController);
 		const power = new PowerSocketService('Power', io, 10, 'power', powerService, socketController);
+		const musicSocket = new ITunesSocketService('music', io, 10, 'music', musicService, socketController);
 
 		console.log('\t\tRegistering socket connection handler');
 		io.on('connection', socketController.getSocketHandler);

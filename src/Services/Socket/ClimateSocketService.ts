@@ -10,11 +10,11 @@ export class ClimateSocketService extends BaseSocketService {
 
 	constructor(socketName: string,
 				io: Server,
-				pollingInterval: number,
+				pollingIntervalInMinutes: number,
 				socketMessageIdentifier: string,
 				controller: IDeviceController,
 				socketController: ISocketController) {
-		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
+		super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(undefined, pollingIntervalInMinutes));
 	}
 
 	public sendInitialState() {
