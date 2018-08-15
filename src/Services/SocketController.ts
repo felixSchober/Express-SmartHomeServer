@@ -95,8 +95,4 @@ export class SocketController implements ISocketController {
 			console.log(`\t[Socket] Socket ${socketService.socketName} is sending initial state to dashboard.`);
 		}
 	}
-
-
-
-
 }
