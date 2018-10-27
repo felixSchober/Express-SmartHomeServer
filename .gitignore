@@ -63,6 +63,7 @@ typings/
 
 # exclude some config files
 src/config/passwordsAndUsers.js
+src/config/userConfig.ts
 
 .idea/
 .dist/
