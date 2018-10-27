@@ -64,6 +64,7 @@ typings/
 # exclude some config files
 src/config/passwordsAndUsers.js
 src/config/userConfig.ts
+src/config/calendar.ts
 
 .idea/
 .dist/
