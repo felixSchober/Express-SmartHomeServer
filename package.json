@@ -23,7 +23,7 @@
     "express": "^4.15.5",
     "method-override": "^2.3.10",
     "moment": "^2.19.4",
-    "mongoose": "^4.11.1",
+    "mongoose": "^5.3.9",
     "morgan": "^1.9.1",
     "node-ical": "^0.8.0",
     "node-schedule": "^1.2.5",
