@@ -25,6 +25,7 @@ const lightsPowerLevelNotScalable = [
 // wattage that each of the hue devices needs
 const lightIdPowerMapping: {[id: string]: number} = {
 	'00:17:88:01:01:23:60:18-0b': 10.0, // IRIS Deckenstrahler
+	'00:17:88:01:03:33:e1:1a-0b': 10.0, // IRIS Schreibtisch
 	'00:17:88:01:00:cb:7d:95-0b': 13.0, // Lightstrip Fenster
 	'84:18:26:00:00:0b:3d:9d-03': 8.0, //Plug Schreibtisch
 	'7c:b0:3e:aa:00:a3:41:3b-03': 6.0, //Plug Ambilight
