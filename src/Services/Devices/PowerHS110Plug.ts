@@ -36,7 +36,7 @@ export class PowerHS110Plug implements IPlug {
 						} else {
 							t = {obj1: this.name, obj2: response.power_mw/1000};
 						}
-
+						this.currentPowerState = t.obj2;
 						resolve(t);
 						})
 						.catch(function (err: any) {
