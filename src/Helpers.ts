@@ -44,7 +44,7 @@ export class Helpers {
 
 			request(options, function (err: string, response: any, body: any) {
 				if (err) {
-					console.error('[' + sender + ']:\tperformRequest(' + options.baseUrl + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Error while connecting to URI. Error: ' + err);
+					console.error('[' + sender + ']:\tperformRequest(' + options.baseUrl + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Error while connecting to URI. Error: ' + JSON.stringify(err));
 					reject(err);
 					return;
 				}
@@ -57,7 +57,7 @@ export class Helpers {
 
 				const res: IRequestResponse = {status: response.statusCode, data: null};
 
-				if ((response.statusCode !== 200 || response.statusCode !== 204) && (body == null || body === '')) {
+				if ((response.statusCode !== 200 || response.statusCode !== 204 || response.statusCode !== 201) && (body == null || body === '')) {
 					console.error('[' + sender + ']:\tperformRequest(' + options.baseUrl + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Possible connection error. Body was empty but status is 200 OK');
 					reject(res);
 					return;
@@ -65,7 +65,7 @@ export class Helpers {
 
 
 				// already parse data if response is 200
-				if (response.statusCode === 200) {
+				if (response.statusCode === 200 || response.statusCode === 201) {
 					if (parseJson) {
 						try {
 							res.data = JSON.parse(body);
@@ -77,6 +77,8 @@ export class Helpers {
 
 							res.data = body;
 						}
+					} else {
+						res.data = body;
 					}
 				} else {
 					console.error('[' + sender + ']:\tperformRequest(' + options.baseUrl + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Possible connection error. Status is not 200 OK. STATUS: ' + response.statusCode);
@@ -146,4 +148,12 @@ export class Helpers {
 		console.log(' |_____/|_| |_| |_|\\__,_|_|   \\__|_|  |_|\\___/|_| |_| |_|\\___| |_____/ \\___|_|    \\_/ \\___|_|   ');
 		console.log('\n\n\n');
 	}
+
+	static newGuid(): string {
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		  var r = Math.random() * 16 | 0,
+			v = c == 'x' ? r : (r & 0x3 | 0x8);
+		  return v.toString(16);
+		});
+	  }
 }
