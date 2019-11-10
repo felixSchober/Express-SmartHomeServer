@@ -6,7 +6,10 @@
   "private": true,
   "main": "scr/server.js",
   "dependencies": {
+    "@azure/cosmos": "^3.4.0",
     "@lynbarry/mvg-api": "^2.0.1",
+    "@types/documentdb": "^1.10.5",
+    "@types/documentdb-server": "0.0.32",
     "@types/node-schedule": "^1.2.2",
     "@types/request": "^2.47.0",
     "@types/request-promise-native": "^1.0.14",
@@ -23,6 +26,7 @@
     "express": "^4.15.5",
     "method-override": "^2.3.10",
     "moment": "^2.19.4",
+    "mongodb": "^3.3.3",
     "mongoose": "^5.3.9",
     "morgan": "^1.9.1",
     "node-ical": "^0.8.0",
