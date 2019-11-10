@@ -22,6 +22,8 @@ import {SocketController} from './Services/SocketController';
 import {ClimateSocketService} from "./Services/Socket/ClimateSocketService";
 import {iTunesService} from "./Services/Devices/iTunesService";
 import {ITunesSocketService} from "./Services/Socket/iTunesSocketService";
+import { CoffeeMonitorService } from './Services/Monitors/CoffeeMonitorService';
+import { CoffeeMonitorSocketService } from './Services/Socket/CoffeeMonitorSocketService';
 
 export class AppServer {
 
@@ -146,6 +148,7 @@ export class AppServer {
 		const hueService = new HueService(10 * 60, 10);
 		const powerService = new PowerService(hueService, 10);
 		const musicService = new iTunesService();
+		const coffeeService = new CoffeeMonitorService(powerService);
 
 		// Load socket modules
 		console.log('\t\tCreating socket device controllers');
@@ -155,6 +158,7 @@ export class AppServer {
 		const hueTemp = new ClimateSocketService('HueTemp', io, 10, 'hueTemp', hueService, socketController);
 		const power = new PowerSocketService('Power', io, 10, 'power', powerService, socketController);
 		const musicSocket = new ITunesSocketService('music', io, 10, 'music', musicService, socketController);
+		const coffeeSocket = new CoffeeMonitorSocketService('coffee', io, 10, 'coffee', coffeeService, socketController);
 
 		console.log('\t\tRegistering socket connection handler');
 		io.on('connection', socketController.getSocketHandler);
