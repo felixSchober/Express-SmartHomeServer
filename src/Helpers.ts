@@ -42,6 +42,18 @@ export class Helpers {
 			// default for parseJson is true
 			parseJson = parseJson === undefined ? true : parseJson;
 
+			// if body is set make sure it is either string or buffer. 
+			// currently, only string is tested
+			if (options.body) {
+				if (typeof options.body !== 'string' && !(options.body instanceof String)){
+					const error = `[${sender}]:\tPerformRequest - Body is not string. Request only accepts string or buffer (not supported). Consider using JSON.stringify to convert the object to JSON.`;
+					console.warn(error);
+					reject(error);
+					return;
+				}
+			}
+
+
 			request(options, function (err: string, response: any, body: any) {
 				if (err) {
 					console.error('[' + sender + ']:\tperformRequest(' + options.baseUrl + ', ' + sender + ', ' + debug + ', ' + parseJson + ') - Error while connecting to URI. Error: ' + JSON.stringify(err));
