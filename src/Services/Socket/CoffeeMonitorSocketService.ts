@@ -3,7 +3,8 @@ import { IDeviceController } from '../../Interfaces/IDeviceController';
 import { ISocketController } from '../../Interfaces/ISocketController';
 import { Server, Socket } from 'socket.io';
 import { PollingIntervalRule } from '../../Interfaces/PollingIntervalRule';
-import { INummericalMonitorService } from '../../Interfaces/INummericalMonitorService';
+import { IMonitorService } from '../../Interfaces/IMonitorService';
+import { ICoffeeStats } from '../../Interfaces/ICoffeeStat';
 
 export class CoffeeMonitorSocketService extends BaseSocketService {
 
@@ -11,7 +12,7 @@ export class CoffeeMonitorSocketService extends BaseSocketService {
         io: Server,
         pollingInterval: number,
         socketMessageIdentifier: string,
-        controller: INummericalMonitorService,
+        controller: IMonitorService,
         socketController: ISocketController) {
             super(socketName, io, socketMessageIdentifier, controller, socketController, new PollingIntervalRule(pollingInterval));
     }
@@ -24,10 +25,12 @@ export class CoffeeMonitorSocketService extends BaseSocketService {
     }    
     
     public sendInitialState(): void {
-        const monitor = this.controller as INummericalMonitorService;
+        const monitor = this.controller as IMonitorService;
         monitor.start()
-            .then((count) => {
-                this.socketController.send(this.socketMessageIdentifier, count);
+            .then((count: ICoffeeStats) => {
+                this.socketController.send(this.socketMessageIdentifier + '_total', count.total);
+                this.socketController.send(this.socketMessageIdentifier + '_week', count.week);
+                this.socketController.send(this.socketMessageIdentifier + '_today', count.today);
             })
             .catch((err) =>
 					this.socketController.log('[Coffee] Could not get initial coffee state'
@@ -35,11 +38,12 @@ export class CoffeeMonitorSocketService extends BaseSocketService {
     }
 
     public sendUpdates = () => {
-        const monitor = this.controller as INummericalMonitorService;
+        const monitor = this.controller as IMonitorService;
         monitor.run()
             .then((count) => {
-                this.socketController.send(this.socketMessageIdentifier, count);
-            })
+                this.socketController.send(this.socketMessageIdentifier + '_total', count.total);
+                this.socketController.send(this.socketMessageIdentifier + '_week', count.week);
+                this.socketController.send(this.socketMessageIdentifier + '_today', count.today);            })
             .catch((err) =>
                     this.socketController.log('[Coffee] Could not get coffee state Error: ' + JSON.stringify(err), true));
     }

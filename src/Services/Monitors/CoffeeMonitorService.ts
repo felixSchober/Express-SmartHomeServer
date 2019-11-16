@@ -1,4 +1,4 @@
-import { INummericalMonitorService } from '../../Interfaces/INummericalMonitorService';
+import { IMonitorService } from '../../Interfaces/IMonitorService';
 import { IPowerControllerService } from '../../Interfaces/Devices/Power/IPowerControllerService';
 import { Moment } from 'moment';
 import * as moment from 'moment';
@@ -12,7 +12,7 @@ import { IRequestResponse } from '../../Interfaces/IRequestResponse';
 
 
 
-export class CoffeeMonitorService implements INummericalMonitorService {
+export class CoffeeMonitorService implements IMonitorService {
     
     private espressoTimeThreshold = 6;
 
@@ -26,16 +26,19 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         this.plugName = plugName || coffeeConfig.plugName;
         this.lastEspressoTime = moment().subtract(10, 'years');
         this.cachedCoffeeStats = {
-            espresso: -1
+            today: -1,
+            total: -1,
+            week: -1
         };
     }
 
-    start(): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
+    start(): Promise<ICoffeeStats> {
+        return new Promise<ICoffeeStats>((resolve, reject) => {
             this.triggerEspressoCountApp()
-            .then((initialNumber: number) => {
-                this.cachedCoffeeStats.espresso = initialNumber;
-                resolve(initialNumber);
+            .then((initialResponse: ICoffeeStats) => {
+                
+                this.cachedCoffeeStats = this.ensureIntegerResponse(initialResponse);
+                resolve(this.cachedCoffeeStats );
             })
             .catch((error) => {
                 reject(error);
@@ -43,12 +46,12 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         });
     }
 
-    run(): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
+    run(): Promise<ICoffeeStats> {
+        return new Promise<ICoffeeStats>((resolve, reject) => {
             this.checkIfNewEspressoHasBeenCreated(false)
                 .then((wasCreated: boolean) => {
                     if(!wasCreated) {
-                        resolve(this.cachedCoffeeStats.espresso);
+                        resolve(this.cachedCoffeeStats);
                         return;
                     }
 
@@ -57,9 +60,11 @@ export class CoffeeMonitorService implements INummericalMonitorService {
                     // trigger flow
                     this.triggerEspressoFlow()
                         .then((newEspressoValue) => {
-                            this.cachedCoffeeStats.espresso = newEspressoValue;
+                            this.cachedCoffeeStats.today = +newEspressoValue;
+                            this.cachedCoffeeStats.total += 1;
+                            this.cachedCoffeeStats.week += 1;
                             console.log('[Coffee]:\trun() Updated coffee number after logic app triggering: ' + newEspressoValue);
-                            resolve(newEspressoValue);
+                            resolve(this.cachedCoffeeStats);
                         })
                         .catch((error) => {
                             const errorMessage = `[Coffee]: \trun() Could not trigger Logic App: ${JSON.stringify(error)}`;
@@ -75,17 +80,17 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         });
     }
 
-    private triggerEspressoCountApp(): Promise<number> {
+    private triggerEspressoCountApp(): Promise<ICoffeeStats> {
         const options: Options = {
             url: coffeeConfig.countEspressoAppUrl,
             method: 'GET'
         };
 
-        return new Promise<number>((resolve, reject) => {
-            Helpers.performRequest(options, '[Coffee]', false, false)
+        return new Promise<ICoffeeStats>((resolve, reject) => {
+            Helpers.performRequest(options, '[Coffee]', false, true)
                 .then((value: IRequestResponse) => {
                     console.log(`[Coffee]: \triggerEspressoCountApp() Intial state Response: ${JSON.stringify(value)}`);
-                    resolve(+value.data);
+                    resolve(value.data as ICoffeeStats);
                 })
                 .catch((error) => {
                     const errorMessage = `[Coffee]: \triggerEspressoCountApp() Unexpected HTTP error. Error: ${JSON.stringify(error)}`;
@@ -105,11 +110,14 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         const options: Options = {
             uri: coffeeConfig.newEspressoAppUrl,
             method: 'POST',
-            body: requestBody
+            body: JSON.stringify(requestBody),
+            headers: {
+                'content-type': 'application/json'
+            }
         };
 
         return new Promise<number>((resolve, reject) => {
-            Helpers.performRequest(options, '[Coffee]', false, false)
+            Helpers.performRequest(options, '[Coffee]', false, true)
                 .then((value: IRequestResponse) => {
                     if (value.status === 401) {
                         const errorMessage = `[Coffee]: \ttriggerEspressoFlow() Logic App auth key (${coffeeConfig.key}) was not correct. Response: ${JSON.stringify(value)}`;
@@ -133,22 +141,29 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         });
     }
 
-    private checkIfNewEspressoHasBeenCreated(liveUpdate: boolean): Promise<boolean> {
+    private checkIfNewEspressoHasBeenCreated(liveUpdate: boolean, degugVerbose?: boolean): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             
             // if the time difference between the last coffee is too short, don't add it
             if (!this.isWithinTimeFrame()) {
+                if (degugVerbose) console.log(`[Coffee]: \tNot within refresh timeframe`);
                 resolve(false);
                 return;
             }
 
             // check current (cached) powerstate
             if (!liveUpdate) {
+                if (degugVerbose) console.log(`[Coffee]: \tUse cached power states to check if coffee`);
+
                 const plugPower = this.powerService.getCachedPowerForPlug(this.plugName);
                 if (plugPower > coffeeConfig.powerThreshold) {
+                    if (degugVerbose) console.log(`[Coffee]: \tAbove power threshold (${plugPower}W > ${coffeeConfig.powerThreshold}W)`);
+
                     console.log('[Coffee]: \tcheckIfNewEspressoHasBeenCreated(' + liveUpdate + '):\tDetected new Coffee. Current Power: ' + plugPower);
                     resolve(true);
                 } else {
+                    if (degugVerbose) console.log(`[Coffee]: \tBelow power threshold (${plugPower}W <= ${coffeeConfig.powerThreshold}W)`);
+
                     resolve(false);
                 }
             } else {
@@ -175,6 +190,13 @@ export class CoffeeMonitorService implements INummericalMonitorService {
         const now = moment();
         const timeDiff = now.diff(this.lastEspressoTime, 'minutes');
         return !(timeDiff < this.espressoTimeThreshold);
+    }
+
+    private ensureIntegerResponse(s: ICoffeeStats): ICoffeeStats {
+        s.today = +s.today;
+        s.week = +s.week;
+        s.total = +s.total;
+        return s;
     }
     
 

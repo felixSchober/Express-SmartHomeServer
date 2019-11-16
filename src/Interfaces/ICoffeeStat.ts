@@ -1,3 +1,5 @@
 export interface ICoffeeStats {
-    espresso: number;
+    today: number;
+    week: number;
+    total: number;
 }
