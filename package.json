@@ -12,7 +12,7 @@
     "@types/documentdb-server": "0.0.32",
     "@types/node-schedule": "^1.2.2",
     "@types/request": "^2.47.0",
-    "@types/request-promise-native": "^1.0.14",
+    "@types/request-promise-native": "^1.0.17",
     "@types/socket.io": "^1.4.34",
     "babel-cli": "^6.26.0",
     "babel-loader": "^6.2.4",
